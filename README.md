@@ -1,101 +1,118 @@
 # Skillbench
 
-Private codename for a terminal workbench that turns repeated agent behavior into portable, testable Agent Skills.
+[![CI](https://github.com/alexrett/skillbench/actions/workflows/ci.yml/badge.svg)](https://github.com/alexrett/skillbench/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/skillbench-cli)](https://www.npmjs.com/package/skillbench-cli)
+[![MIT](https://img.shields.io/badge/license-MIT-dfff00)](LICENSE)
 
-The product has three jobs:
+Turn repeated agent failures into portable, tested Agent Skills.
 
-1. Construct a concise `SKILL.md` package from a real success, failure, or process.
-2. Measure both discovery quality and actual task behavior instead of trusting the prose.
-3. Move validated packages between projects without losing version or checksum provenance.
+Skillbench is a local-first CLI and [Glyph](https://github.com/semos-labs/glyph) TUI for constructing `SKILL.md` packages, validating their shape, testing discovery boundaries, comparing actual agent behavior against a baseline, and shipping immutable versions with checksums and lockfile provenance.
 
-Skillbench is not intended to replace the open `skills` package manager. Generated packages are standard Agent Skills and work with `npx skills add`; the built-in registry is a deliberately small private catalog for dogfood and controlled teams.
+**[Website](https://alexrett.github.io/skillbench/)** · **[npm](https://www.npmjs.com/package/skillbench-cli)** · **[Releases](https://github.com/alexrett/skillbench/releases)**
 
-## Install and run
+## Install
 
-From this checkout:
+Skillbench's npm CLI requires [Bun 1.2+](https://bun.sh/).
 
 ```bash
-bun install
-bun run build
-bun run src/cli.tsx
+npm install -g skillbench-cli
+skillbench
 ```
 
-The command without arguments opens the Glyph workbench. Keyboard: arrows or `j`/`k` navigate menus, `Tab` moves between fields, `Enter` or `Space` activates controls, and `Ctrl+C` exits.
-
-Build a standalone executable that does not require Bun at runtime:
+Or run it without a global install:
 
 ```bash
-bun run build:binary
-./dist/skillbench --version
+bunx skillbench-cli --version
 ```
 
-Build and verify the npm package locally:
+Standalone macOS, Linux, and Windows executables are attached to every [GitHub release](https://github.com/alexrett/skillbench/releases) and do not require Bun at runtime.
 
-```bash
-npm pack --pack-destination dist
-npm install -g ./dist/skillbench-cli-0.3.0.tgz
-skillbench --version
+## Why
+
+A `SKILL.md` can read well and still fail in practice:
+
+- its description may trigger too broadly or not trigger at all;
+- its instructions may not improve the target task;
+- an evaluation can accidentally leak its own expected answer;
+- copied packages lose version and provenance;
+- a successful fix stays trapped in one conversation instead of becoming reusable behavior.
+
+Skillbench makes that loop explicit:
+
+```text
+repeated failure or success
+          │
+          ▼
+guided construction ──► static validation ──► trigger / near-miss eval
+                                                      │
+                                                      ▼
+                                           baseline vs skill task eval
+                                                      │
+                                                      ▼
+                                      version + checksum + lockfile
 ```
 
-After an npm release, the intended commands are `npm install -g skillbench-cli` and `bunx skillbench-cli`. The package has not been published from this private repository yet.
-
-## Workflows
+## Five-minute workflow
 
 ```bash
-# Guided constructor or headless generation
+# Open the guided workbench
 skillbench new
-skillbench build ./brief.json --out ./.agents/skills/my-skill
 
-# Static package checks
-skillbench validate ./.agents/skills/my-skill
+# Or generate from a JSON brief
+skillbench build ./brief.json --out ./.agents/skills/release-check
 
-# Discovery boundary
-skillbench eval ./.agents/skills/my-skill
-skillbench eval ./.agents/skills/my-skill --prompt "Finish the release" --expect trigger
+# Validate the package
+skillbench validate ./.agents/skills/release-check
 
-# Actual behavior: baseline versus skill
-skillbench eval ./.agents/skills/my-skill --task
+# Test when the skill should and should not be discovered
+skillbench eval ./.agents/skills/release-check
 
-# Private versioned catalog
-skillbench registry init ./registry --name team-skills
-skillbench registry add ./.agents/skills/my-skill --registry ./registry --version 0.1.0
-skillbench registry search release --registry ./registry
-skillbench registry show my-skill@0.1.0 --registry ./registry
-skillbench registry doctor --registry ./registry
-skillbench install my-skill@0.1.0 --registry ./registry
-skillbench installed
-skillbench installed --check
+# Run the same fixture with and without the skill
+skillbench eval ./.agents/skills/release-check --task
 ```
 
-Interactive terminals receive live Glyph dashboards. `--plain` and `--json` provide stable headless output for CI.
+Interactive terminals receive live Glyph dashboards. `--plain` and `--json` provide stable headless output where supported.
 
 ## Generated package
 
 ```text
-my-skill/
+release-check/
 ├── SKILL.md
 ├── agents/
 │   └── openai.yaml
 └── evals/
-    ├── cases.yaml               # trigger / near-miss cases
-    ├── tasks.yaml               # optional task A/B contract
+    ├── cases.yaml               # trigger and near-miss cases
+    ├── tasks.yaml               # optional behavior A/B contract
     └── fixtures/                # optional isolated workspaces
 ```
 
-The `evals/` directory is a Skillbench extension. It does not change the semantics of the portable skill, and existing installers copy it as ordinary package content.
+The `evals/` directory is a Skillbench extension. It does not change the portable skill semantics, and existing installers copy it as ordinary package content.
 
-## Evaluation integrity
+## What gets measured
 
-Trigger evals give Codex only the skill name, description, and one user request. `should_trigger` remains inside the scorer.
+### Trigger boundaries
 
-Task evals make two fresh copies of the same fixture:
+Trigger evaluation gives the agent only the skill's name, description, and one user request. The `should_trigger` label stays inside the scorer.
+
+```bash
+skillbench eval ./.agents/skills/release-check
+skillbench eval ./.agents/skills/release-check \
+  --prompt "Finish the release" \
+  --expect trigger
+```
+
+### Actual behavior
+
+Task evaluation makes two fresh copies of one fixture:
 
 ```text
 fixture ──► baseline workspace ──► deterministic rubric
         └─► skill workspace    ──► deterministic rubric
 ```
 
-Neither run receives the rubric, the expected score, or the other run's output. The skill run receives `SKILL.md`; the baseline does not. Current rubric checks are:
+Neither run receives the rubric, expected score, or other run's output. The skill run receives `SKILL.md`; the baseline does not.
+
+Current deterministic rubric checks:
 
 - `file-exists`
 - `file-contains`
@@ -106,7 +123,7 @@ Example `evals/tasks.yaml`:
 
 ```yaml
 version: 1
-skill: verify-real-outcome
+skill: release-check
 thresholds:
   min_skill_score: 1
   min_delta: 0
@@ -125,29 +142,73 @@ cases:
 
 Task runs use ephemeral `workspace-write` sandboxes. Trigger evaluators use empty, read-only workspaces. `--keep` preserves task workspaces for debugging; otherwise they are removed after scoring.
 
-Task evaluation executes agent instructions and local commands. Treat a skill under evaluation as executable input: inspect it first and use a disposable machine or stronger external sandbox for hostile packages. Skillbench explicitly disables workspace network access, but the Codex workspace sandbox is a safety layer rather than a proof that arbitrary third-party instructions are harmless.
+## Versioned registry
 
-## Registry model
-
-`registry.yaml` indexes immutable `name@version` directories. Every entry includes SHA-256 over its normalized file tree. Installation validates the package, verifies the checksum, stages a copy, and then renames it into place. `.skillbench-lock.yaml` records source, version, checksum, and installation time.
-
-The registry source can be a local directory, a manifest path, or a git URL. Remote git registries are cloned into a cache; `--refresh` performs a fast-forward pull.
-
-The checksum detects corruption or a package changed behind its manifest. It is not a signature and does not establish that a registry maintainer is trustworthy. Public/community distribution should use a reviewed git repository and an established installer such as `npx skills add`.
-
-## Release gates
+Skillbench includes a deliberately small git/local registry for controlled teams:
 
 ```bash
-bun run check
-bun run build:release bun-darwin-arm64
-cd release && shasum -a 256 -c SHA256SUMS
-npm pack --dry-run
+skillbench registry init ./registry --name team-skills
+skillbench registry add ./.agents/skills/release-check --registry ./registry --version 0.1.0
+skillbench registry search release --registry ./registry
+skillbench registry show release-check@0.1.0 --registry ./registry
+skillbench registry doctor --registry ./registry
+skillbench install release-check@0.1.0 --registry ./registry
+skillbench installed --check
 ```
 
-The release workflow cross-compiles macOS, Linux, and Windows artifacts. npm publication is a separate manual workflow input and can be protected with a GitHub environment.
+`registry.yaml` indexes immutable `name@version` directories. Every entry includes SHA-256 over its normalized file tree. Installation validates the package, verifies the checksum, stages a copy, then renames it into place. `.skillbench-lock.yaml` records source, version, checksum, and installation time.
 
-## Product boundary
+A checksum detects corruption or a package changed behind its manifest. It is not a signature and does not establish that a registry maintainer is trustworthy.
 
-Skillbench should stay focused on authoring quality, leak-free evaluation, and evidence. Multi-agent installation, public discovery, ratings, accounts, and hosted registry infrastructure already belong to broader ecosystem tools. The private catalog remains useful where a team needs pinned, checksummed packages without a service.
+## Alternatives and fit
 
-The public name is intentionally unresolved: `SkillsBench` is already used by an existing benchmark project, so this private codename should be changed before open source release.
+Skillbench is an authoring-and-evidence workbench, not a replacement for the ecosystem around it.
+
+| Tool | Best at | Where Skillbench differs |
+| --- | --- | --- |
+| A hand-written `SKILL.md` | Maximum freedom and zero tooling | Adds guided construction, validation, evals, and version provenance |
+| [`npx skills`](https://github.com/vercel-labs/skills) | Discovering and installing skills across many agent harnesses | Skillbench focuses on proving a skill before distribution; the two work together |
+| [SkillsBench](https://github.com/benchflow-ai/skillsbench) | Research-scale gym benchmarking of skill effectiveness and agent behavior | Skillbench is a day-to-day local workflow for one skill and its fixtures |
+| [`skill-eval`](https://github.com/effectorHQ/skill-eval) | Static structural quality analysis | Skillbench also runs trigger boundaries and isolated baseline-versus-skill tasks |
+| [`mattpocock/skills`](https://github.com/mattpocock/skills) | A real, composable collection of production engineering skills | It is a skill collection and inspiration; Skillbench is tooling for building and testing your own |
+
+Skillbench intentionally does **not** provide hosted accounts, ratings, a marketplace, or multi-agent installation. Create and prove with Skillbench, then publish standard Agent Skills and install them with the ecosystem tool your team already uses.
+
+## Security boundary
+
+Task evaluation executes agent instructions and local commands. Treat a skill under evaluation as executable input: inspect it first and use a disposable machine or stronger external sandbox for hostile packages.
+
+Skillbench disables workspace network access for Codex task runs, but a workspace sandbox is a safety layer rather than proof that arbitrary third-party instructions are harmless. See [SECURITY.md](SECURITY.md) for reporting.
+
+## Development
+
+```bash
+git clone https://github.com/alexrett/skillbench.git
+cd skillbench
+bun install
+bun run check
+bun run site:check
+```
+
+Useful commands:
+
+```bash
+bun run src/cli.tsx              # workbench from source
+bun run build                    # npm entrypoint
+bun run build:binary             # current-platform executable
+bun run build:release            # current release target
+bun run site:serve               # local website on :4173
+npm pack --dry-run               # inspect npm package contents
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before a substantial change.
+
+## Release model
+
+- Pull requests and `main` run typechecking, tests, dependency audit, package inspection, site checks, and binary smoke tests.
+- `main` deploys the static site to GitHub Pages.
+- A `v*` tag publishes the npm package through npm trusted publishing, builds five standalone targets, records SHA-256 checksums, and creates a GitHub release.
+
+## License
+
+[MIT](LICENSE)
