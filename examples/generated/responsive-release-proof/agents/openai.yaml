@@ -1,0 +1,4 @@
+interface:
+  display_name: "Responsive Release Proof"
+  short_description: "Prove a changed web surface at desktop and mobile before release"
+  default_prompt: "Use $responsive-release-proof to produce browser-backed release evidence and fix responsive blockers instead of treating a passing build as proof."

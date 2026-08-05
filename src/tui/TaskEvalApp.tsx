@@ -42,21 +42,28 @@ export function TaskEvalApp({
   concurrency,
   limit,
   keepWorkspaces,
+  runs = 1,
+  order = "fixed",
+  seed = 1,
 }: {
   suite: TaskEvalSuite;
   runner: TaskRunner;
   concurrency: number;
   limit?: number;
   keepWorkspaces?: boolean;
+  runs?: number;
+  order?: "fixed" | "counterbalanced";
+  seed?: number;
 }) {
   const { exit } = useApp();
   const cases = suite.cases.slice(0, limit);
-  const [states, setStates] = useState<CaseState[]>(cases.map(() => ({ baseline: { status: "pending" }, skill: { status: "pending" } })));
+  const workItems = cases.flatMap((evalCase) => Array.from({ length: runs }, (_, run) => ({ evalCase, run: run + 1 })));
+  const [states, setStates] = useState<CaseState[]>(workItems.map(() => ({ baseline: { status: "pending" }, skill: { status: "pending" } })));
   const [report, setReport] = useState<TaskEvalReport | null>(null);
   const [error, setError] = useState("");
   const started = useRef(false);
   const completedVariants = states.reduce((sum, state) => sum + Number(state.baseline.status === "complete") + Number(state.skill.status === "complete"), 0);
-  const totalVariants = cases.length * 2;
+  const totalVariants = workItems.length * 2;
 
   useEffect(() => {
     if (started.current) return;
@@ -65,6 +72,9 @@ export function TaskEvalApp({
       concurrency,
       limit,
       keepWorkspaces,
+      runs,
+      order,
+      seed,
       onEvent(event) {
         setStates((current) => current.map((state, index) => {
           if (index !== event.index) return state;
@@ -75,7 +85,7 @@ export function TaskEvalApp({
         }));
       },
     }).then(setReport).catch((caught) => setError((caught as Error).message));
-  }, [suite, runner, concurrency, limit, keepWorkspaces]);
+  }, [suite, runner, concurrency, limit, keepWorkspaces, runs, order, seed]);
 
   return (
     <Box style={{ width: "100%", height: "100%", padding: 1, gap: 1 }}>
@@ -85,17 +95,17 @@ export function TaskEvalApp({
       </Box>
       <Box style={{ gap: 0 }}>
         <Text style={{ bold: true, color: COLORS.accent }}>{suite.skillName}</Text>
-        <Text style={{ color: COLORS.muted }}>baseline → skill · rubric hidden from both runs</Text>
+        <Text style={{ color: COLORS.muted }}>{order === "counterbalanced" ? "counterbalanced AB/BA" : "baseline → skill"} · {runs} run{runs === 1 ? "" : "s"} · rubric hidden</Text>
       </Box>
       <Progress value={totalVariants === 0 ? 0 : completedVariants / totalVariants} showPercent label={`${completedVariants}/${totalVariants}`} />
       <ScrollView style={{ flexGrow: 1, minHeight: 0, bg: COLORS.panel, padding: 1 }}>
         <Box style={{ gap: 1 }}>
-          {cases.map((evalCase, index) => {
+          {workItems.map(({ evalCase, run }, index) => {
             const state = states[index];
             if (!state) return null;
             return (
-              <Box key={evalCase.id} style={{ gap: 0 }}>
-                <Text style={{ bold: true }}>{evalCase.id} · {evalCase.prompt}</Text>
+              <Box key={`${evalCase.id}-${run}`} style={{ gap: 0 }}>
+                <Text style={{ bold: true }}>{evalCase.id}#{run} · {evalCase.prompt}</Text>
                 <VariantRow label="baseline" state={state.baseline} />
                 <VariantRow label="skill" state={state.skill} />
                 {state.result ? (
@@ -114,9 +124,9 @@ export function TaskEvalApp({
       {error ? <Text style={{ color: COLORS.error }}>× {error}</Text> : null}
       {report ? (
         <Box style={{ border: "round", borderColor: report.passed ? COLORS.success : COLORS.error, padding: 1, gap: 0 }}>
-          <Text style={{ bold: true, color: report.passed ? COLORS.success : COLORS.error }}>{report.passed ? "PASS" : "FAIL"}</Text>
+          <Text style={{ bold: true, color: report.passed ? COLORS.success : COLORS.error }}>{report.verdict.toUpperCase()} · {report.passed ? "thresholds pass" : "thresholds fail"}</Text>
           <Text>baseline {percent(report.metrics.averageBaselineScore)} · skill {percent(report.metrics.averageSkillScore)} · delta {report.metrics.averageDelta >= 0 ? "+" : ""}{percent(report.metrics.averageDelta)}</Text>
-          <Text style={{ color: COLORS.muted }}>improved {report.metrics.improved} · unchanged {report.metrics.unchanged} · regressed {report.metrics.regressed}</Text>
+          <Text style={{ color: COLORS.muted }}>latency {Math.round(report.metrics.averageBaselineDurationMs)}ms → {Math.round(report.metrics.averageSkillDurationMs)}ms · improved {report.metrics.improved} · unchanged {report.metrics.unchanged} · regressed {report.metrics.regressed}</Text>
           <ActionButton onPress={() => exit()}>Exit</ActionButton>
         </Box>
       ) : null}

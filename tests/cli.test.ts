@@ -29,6 +29,9 @@ describe("CLI", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Skillbench — build testable Agent Skills");
     expect(result.stdout).toContain("skillbench registry");
+    expect(result.stdout).toContain("skillbench audit");
+    expect(result.stdout).toContain("skillbench check");
+    expect(result.stdout).toContain("skillbench challenge");
   });
 
   test("rejects an unknown command", async () => {

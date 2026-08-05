@@ -1,0 +1,63 @@
+name: Skillbench Gate
+description: Validate and security-audit Agent Skills as a deterministic CI gate.
+author: Aleksei Malikov
+
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  path:
+    description: Optional skill directory or repository root. Empty discovers conventional skill roots.
+    required: false
+    default: ""
+  strict:
+    description: Enforce opinionated authoring lint in addition to portable validation.
+    required: false
+    default: "false"
+  fail-on:
+    description: Minimum security severity that fails the gate.
+    required: false
+    default: high
+  version:
+    description: Immutable skillbench-cli package version to execute.
+    required: false
+    default: 0.4.0
+  report:
+    description: JSON evidence report path.
+    required: false
+    default: skillbench-report.json
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      with:
+        bun-version: 1.3.14
+    - name: Run Skillbench gate
+      shell: bash
+      env:
+        SKILLBENCH_PATH: ${{ inputs.path }}
+        SKILLBENCH_STRICT: ${{ inputs.strict }}
+        SKILLBENCH_FAIL_ON: ${{ inputs.fail-on }}
+        SKILLBENCH_VERSION: ${{ inputs.version }}
+        SKILLBENCH_REPORT: ${{ inputs.report }}
+      run: |
+        set -euo pipefail
+        case "$SKILLBENCH_FAIL_ON" in
+          info|low|medium|high|critical) ;;
+          *) echo "Invalid fail-on severity: $SKILLBENCH_FAIL_ON" >&2; exit 2 ;;
+        esac
+        case "$SKILLBENCH_STRICT" in
+          true|false) ;;
+          *) echo "strict must be true or false" >&2; exit 2 ;;
+        esac
+        if [[ ! "$SKILLBENCH_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+          echo "version must be an exact semver, not a tag or range" >&2
+          exit 2
+        fi
+        args=(check --fail-on "$SKILLBENCH_FAIL_ON" --report "$SKILLBENCH_REPORT")
+        if [[ "$SKILLBENCH_STRICT" == "true" ]]; then args+=(--strict); fi
+        if [[ -n "$SKILLBENCH_PATH" ]]; then args+=("$SKILLBENCH_PATH"); fi
+        bunx "skillbench-cli@$SKILLBENCH_VERSION" "${args[@]}"

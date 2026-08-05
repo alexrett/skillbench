@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "recordedOn": "2026-08-05",
+  "skill": "verify-real-outcome",
+  "runner": "codex",
+  "command": "skillbench eval examples/generated/verify-real-outcome --task --runs 2 --order counterbalanced --seed 17",
+  "verdict": "redundant",
+  "metrics": {
+    "pairedRuns": 2,
+    "averageBaselineScore": 1,
+    "averageSkillScore": 1,
+    "averageDelta": 0,
+    "deltaStdDev": 0,
+    "averageBaselineDurationMs": 39894.5,
+    "averageSkillDurationMs": 42741,
+    "durationDeltaPercent": 0.0713,
+    "averageBaselineTokens": 125139,
+    "averageSkillTokens": 121274.5,
+    "tokenDeltaPercent": -0.0309,
+    "improved": 0,
+    "unchanged": 2,
+    "regressed": 0
+  },
+  "note": "Both orders scored 100%. The token reduction did not meet the efficiency threshold and latency increased, so challenge treats the skill as redundant."
+}

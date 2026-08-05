@@ -15,6 +15,10 @@ const requiredSnippets = [
   'name="twitter:card"',
   "Turn repeated agent failures into tested skills.",
   "A real project, not a demo fixture.",
+  "Treat every skill as untrusted input.",
+  "Our own example failed the usefulness challenge.",
+  "Then the mobile bug became a skill.",
+  "skillbench check --strict --fail-on high",
   "malikov.tech",
   "npm i -g skillbench-cli",
 ];

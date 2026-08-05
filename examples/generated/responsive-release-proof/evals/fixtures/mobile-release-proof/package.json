@@ -1,0 +1,7 @@
+{
+  "name": "responsive-release-fixture",
+  "private": true,
+  "scripts": {
+    "qa": "bun run scripts/check-responsive.ts"
+  }
+}

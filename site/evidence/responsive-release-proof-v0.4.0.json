@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "recordedOn": "2026-08-05",
+  "skill": "responsive-release-proof",
+  "runner": "codex",
+  "command": "skillbench challenge examples/generated/responsive-release-proof --runs 2 --seed 29",
+  "verdict": "proven",
+  "thresholds": {
+    "minSkillScore": 0.9,
+    "minDelta": 0.2
+  },
+  "metrics": {
+    "pairedRuns": 2,
+    "averageBaselineScore": 0.25,
+    "averageSkillScore": 0.95,
+    "averageDelta": 0.7,
+    "deltaStdDev": 0.1,
+    "averageBaselineDurationMs": 97977,
+    "averageSkillDurationMs": 141627.5,
+    "durationDeltaPercent": 0.4455,
+    "averageBaselineTokens": 237568.5,
+    "averageSkillTokens": 299183.5,
+    "tokenDeltaPercent": 0.2594,
+    "improved": 2,
+    "unchanged": 0,
+    "regressed": 0
+  },
+  "runs": [
+    {
+      "run": 1,
+      "order": ["skill", "baseline"],
+      "baselineScore": 0.3,
+      "skillScore": 0.9,
+      "delta": 0.6
+    },
+    {
+      "run": 2,
+      "order": ["baseline", "skill"],
+      "baselineScore": 0.2,
+      "skillScore": 1,
+      "delta": 0.8
+    }
+  ],
+  "note": "This is a small local dogfood result, not a universal benchmark. The recorded score is conservative: run 1 exposed that the candidate scorer selected an earlier failed QA command instead of the final rerun; v0.4 now scores the last matching command."
+}

@@ -1,0 +1,38 @@
+{
+  "name": "responsive-release-proof",
+  "displayName": "Responsive Release Proof",
+  "description": "Prove a changed web surface at desktop and mobile before release. Use when a website, landing page, rendered frontend, or responsive CSS changed and the task includes final QA, deployment, release, or a claim that the user-visible page is ready.",
+  "sourceKind": "failure",
+  "scenario": "Static checks passed, but the actual 390px page was 22px wider than the viewport because a visually hidden table header and long CI rail still participated in layout.",
+  "desiredOutcome": "produce browser-backed release evidence and fix responsive blockers instead of treating a passing build as proof",
+  "verification": "Load the actual local or staged page; verify identity, meaningful DOM, console health, a primary interaction, desktop and 390px screenshots, and scrollWidth equal to innerWidth.",
+  "positiveTriggers": [
+    "Finish this landing-page release and verify desktop and mobile before shipping",
+    "We changed the responsive CSS; do the final browser QA and fix any blockers",
+    "The site build is green. Prove the real page is ready to deploy",
+    "Check this frontend at 390px and desktop, exercise the menu, and capture release evidence"
+  ],
+  "negativeTriggers": [
+    "Explain how CSS media queries work",
+    "Review this responsive design proposal without running the site",
+    "Write unit tests for this backend parser",
+    "Create a visual concept for a new landing page"
+  ],
+  "processSteps": [
+    "Name the exact page URL, primary interaction, and user-visible ready state before testing",
+    "Run the repository's static and build checks, but do not treat them as browser evidence",
+    "Open the actual built or served page in the available browser surface and verify URL, title, meaningful DOM, missing assets, and console warnings or errors",
+    "At a normal desktop viewport, inspect the first viewport, the changed sections, and at least one primary interaction",
+    "At 390px or the requested mobile width, assert document scrollWidth equals innerWidth and inspect wrapping, clipping, overlap, navigation, and touch-sized controls",
+    "If horizontal overflow exists, project the bounding boxes of elements outside the viewport, fix the smallest root cause, reload, and repeat the identical measurement",
+    "Capture desktop and mobile screenshots plus the interaction state; report exact viewports, checks, fixes, and remaining browser or flow boundaries"
+  ],
+  "doneCriteria": [
+    "The actual local, staged, or released page has the expected URL, title, and meaningful rendered content",
+    "No relevant console warning, framework overlay, missing asset, clipping, overlap, or horizontal viewport overflow remains",
+    "At least one primary interaction has a directly observed state change",
+    "Desktop and 390px mobile evidence correspond to the implementation being released",
+    "The handoff names exact viewports, evidence, fixed blockers, and any untested browser or state"
+  ],
+  "outputPath": "./examples/generated/responsive-release-proof"
+}

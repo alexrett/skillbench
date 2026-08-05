@@ -14,6 +14,7 @@ import {
 import os from "node:os";
 import path from "node:path";
 import YAML from "yaml";
+import { auditSkillDirectory } from "../security/audit.ts";
 import { validateSkillDirectory } from "../validate.ts";
 import { forgetInstallation, readLock, recordInstallation } from "./lock.ts";
 import { readManifest, writeManifest } from "./manifest.ts";
@@ -157,6 +158,14 @@ export async function addSkillToRegistry(options: {
     const errors = validation.issues.filter((entry) => entry.severity === "error").map((entry) => entry.message).join("; ");
     throw new Error(`Skill validation failed${errors ? `: ${errors}` : ""}`);
   }
+  const security = await auditSkillDirectory(source, { failOn: "high" });
+  if (!security.passed) {
+    const risks = security.findings
+      .filter((finding) => finding.severity === "high" || finding.severity === "critical")
+      .map((finding) => `${finding.code} in ${finding.path}${finding.line ? `:${finding.line}` : ""}`)
+      .join("; ");
+    throw new Error(`Skill security audit failed${risks ? `: ${risks}` : ""}`);
+  }
   const skillSource = await readFile(path.join(source, "SKILL.md"), "utf8");
   const frontmatter = parseFrontmatter(skillSource);
   const description = typeof frontmatter.description === "string" ? frontmatter.description : "";
@@ -243,6 +252,8 @@ export async function installSkill(options: {
   if (actualChecksum !== entry.checksum) throw new Error(`Checksum mismatch for ${entry.name}@${entry.version}`);
   const validation = await validateSkillDirectory(source, { enforceDirectoryName: false });
   if (!validation.valid) throw new Error(`Registry skill ${entry.name}@${entry.version} is invalid`);
+  const security = await auditSkillDirectory(source, { failOn: "high" });
+  if (!security.passed) throw new Error(`Registry skill ${entry.name}@${entry.version} failed security audit`);
   const root = path.resolve(options.targetRoot);
   const target = path.join(root, entry.name);
   if (await exists(target)) {
@@ -296,6 +307,10 @@ export async function checkInstalledSkills(targetRoot: string): Promise<Installe
         if (actualChecksum !== record.checksum) issues.push("Checksum differs from lockfile");
         const validation = await validateSkillDirectory(target);
         issues.push(...validation.issues.filter((entry) => entry.severity === "error").map((entry) => entry.message));
+        const security = await auditSkillDirectory(target, { failOn: "high" });
+        issues.push(...security.findings
+          .filter((finding) => finding.severity === "high" || finding.severity === "critical")
+          .map((finding) => `Security ${finding.code}: ${finding.message}`));
       } catch (error) {
         issues.push((error as Error).message);
       }
@@ -328,6 +343,10 @@ export async function doctorRegistry(input = "./registry", refresh = false): Pro
       const validation = await validateSkillDirectory(source, { enforceDirectoryName: false });
       for (const issue of validation.issues) {
         issues.push({ severity: issue.severity, code: `skill-${issue.code}`, message: issue.message, skill: entry.name, version: entry.version });
+      }
+      const security = await auditSkillDirectory(source, { failOn: "high" });
+      for (const finding of security.findings.filter((entry) => entry.severity === "high" || entry.severity === "critical")) {
+        issues.push({ severity: "error", code: `security-${finding.code}`, message: `${finding.path}${finding.line ? `:${finding.line}` : ""}: ${finding.message}`, skill: entry.name, version: entry.version });
       }
     } catch (error) {
       issues.push({ severity: "error", code: "package-error", message: (error as Error).message, skill: entry.name, version: entry.version });
