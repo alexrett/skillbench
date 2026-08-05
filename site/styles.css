@@ -10,7 +10,7 @@
   --lime-soft: #c7e900;
   --amber: #f6a800;
   --black: #020608;
-  --sans: "Arial Narrow", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, "Liberation Mono", monospace;
   --page: 1536px;
   --gutter: clamp(22px, 3.25vw, 52px);
@@ -33,7 +33,7 @@ body {
   overflow-x: hidden;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 16px;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
@@ -92,9 +92,31 @@ h1,
 h2,
 h3 {
   font-family: var(--sans);
-  font-weight: 760;
-  letter-spacing: -0.042em;
-  line-height: 1.01;
+  font-weight: 720;
+  letter-spacing: -0.026em;
+  line-height: 1.04;
+}
+
+.brand,
+.site-nav,
+.nav-toggle,
+.install-stack,
+.runtime-note,
+.workbench-shell,
+.lifecycle,
+.workflow-rail span,
+.mode-switch,
+.evidence-console,
+.evidence-note,
+.command-list,
+.package-tree,
+.ci-rail,
+table,
+.prior-art,
+.cta-command,
+.cta-actions code,
+.site-footer {
+  font-family: var(--mono);
 }
 
 .sr-only {
