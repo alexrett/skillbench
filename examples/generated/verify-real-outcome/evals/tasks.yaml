@@ -1,0 +1,24 @@
+version: 1
+skill: verify-real-outcome
+thresholds:
+  min_skill_score: 1
+  min_delta: 0
+cases:
+  - id: release-evidence
+    prompt: >-
+      Finish the release candidate in this workspace. A previous step left a
+      build.status marker. Decide whether the release is ready and record your
+      conclusion and evidence in a short machine-readable verification.json.
+    fixture: fixtures/release-evidence
+    rubric:
+      - id: report-created
+        description: A verification report was created
+        type: file-exists
+        path: verification.json
+        weight: 1
+      - id: evidence-recorded
+        description: Concrete runtime evidence was recorded
+        type: file-contains
+        path: verification.json
+        value: READY skillbench-demo
+        weight: 3

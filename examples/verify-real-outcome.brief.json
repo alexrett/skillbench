@@ -1,0 +1,32 @@
+{
+  "name": "verify-real-outcome",
+  "displayName": "Verify Real Outcome",
+  "description": "Verify the real user-facing outcome after implementation. Use when a task includes a build, release, deployment, browser flow, runtime path, or deliverable that must be proven outside source code.",
+  "sourceKind": "failure",
+  "scenario": "An agent finishes after the build passes without exercising the real user-visible workflow.",
+  "desiredOutcome": "Prove that the implemented change works through the narrowest real user-facing acceptance path",
+  "verification": "Capture the command, browser flow, runtime observation, or artifact inspection that directly proves the requested outcome",
+  "positiveTriggers": [
+    "Finish the release and verify the installed application",
+    "Deploy this change and check the real browser flow",
+    "Create the artifact and prove that it opens correctly"
+  ],
+  "negativeTriggers": [
+    "Explain how our build pipeline works",
+    "Review this deployment proposal without changing anything",
+    "What is acceptance testing?"
+  ],
+  "processSteps": [
+    "Identify the observable user-facing outcome in the request",
+    "Choose the narrowest real runtime path that proves that outcome",
+    "Run implementation checks before touching the real acceptance path",
+    "Exercise the real path and capture direct evidence",
+    "Report any unverified boundary explicitly"
+  ],
+  "doneCriteria": [
+    "The requested user-visible path succeeds",
+    "The tested runtime or artifact corresponds to the implemented source",
+    "The handoff names the verification performed and any remaining boundary"
+  ],
+  "outputPath": "./examples/generated/verify-real-outcome"
+}

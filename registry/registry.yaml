@@ -1,0 +1,16 @@
+version: 1
+name: "skillbench-lab"
+updated_at: "2026-08-05T18:23:23.639Z"
+skills:
+  - name: "verify-real-outcome"
+    version: "0.1.1"
+    description: "Verify the real user-facing outcome after implementation. Use when a task includes a build, release, deployment, browser flow, runtime path, or deliverable that must be proven outside source code."
+    path: "skills/verify-real-outcome/0.1.1"
+    checksum: "sha256:a69747149f705b81f1e2fe8264cfc27117f3eb3e51c0e3c85a5790333d04cccf"
+    published_at: "2026-08-05T18:23:23.639Z"
+  - name: "verify-real-outcome"
+    version: "0.1.0"
+    description: "Verify the real user-facing outcome after implementation. Use when a task includes a build, release, deployment, browser flow, runtime path, or deliverable that must be proven outside source code."
+    path: "skills/verify-real-outcome/0.1.0"
+    checksum: "sha256:ebc2bba41639c369ded8e2e9534041425733b1f0bb7e5b5b92de642e5a672852"
+    published_at: "2026-08-05T18:14:39.646Z"

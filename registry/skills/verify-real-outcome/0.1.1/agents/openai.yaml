@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify Real Outcome"
+  short_description: "Verify the real user-facing outcome after implementation"
+  default_prompt: "Use $verify-real-outcome to prove that the implemented change works through the narrowest real user-facing acceptance path."

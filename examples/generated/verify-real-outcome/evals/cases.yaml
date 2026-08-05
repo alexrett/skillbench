@@ -1,0 +1,28 @@
+version: 1
+skill: "verify-real-outcome"
+cases:
+  - id: "trigger-1"
+    prompt: "Finish the release and verify the installed application"
+    should_trigger: true
+  - id: "trigger-2"
+    prompt: "Deploy this change and check the real browser flow"
+    should_trigger: true
+  - id: "trigger-3"
+    prompt: "Create the artifact and prove that it opens correctly"
+    should_trigger: true
+  - id: "near-miss-1"
+    prompt: "Explain how our build pipeline works"
+    should_trigger: false
+  - id: "near-miss-2"
+    prompt: "Review this deployment proposal without changing anything"
+    should_trigger: false
+  - id: "near-miss-3"
+    prompt: "What is acceptance testing?"
+    should_trigger: false
+rubric:
+  outcome: "Prove that the implemented change works through the narrowest real user-facing acceptance path"
+  verification: "Capture the command, browser flow, runtime observation, or artifact inspection that directly proves the requested outcome"
+  done:
+    - "The requested user-visible path succeeds"
+    - "The tested runtime or artifact corresponds to the implemented source"
+    - "The handoff names the verification performed and any remaining boundary"

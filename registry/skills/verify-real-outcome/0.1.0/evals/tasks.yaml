@@ -1,0 +1,32 @@
+version: 1
+skill: verify-real-outcome
+thresholds:
+  min_skill_score: 1
+  min_delta: 0
+cases:
+  - id: release-evidence
+    prompt: >-
+      Finish the release candidate in this workspace. The build marker is green,
+      but confirm whether the actual runnable artifact works. Record the observed
+      result in verification.json with boolean field runtime_verified and a
+      non-empty evidence string.
+    fixture: fixtures/release-evidence
+    rubric:
+      - id: report-created
+        description: A verification report was created
+        type: file-exists
+        path: verification.json
+        weight: 1
+      - id: runtime-exercised
+        description: The report confirms the runnable artifact was exercised
+        type: json-equals
+        path: verification.json
+        property: runtime_verified
+        expected: true
+        weight: 2
+      - id: evidence-recorded
+        description: Concrete runtime evidence was recorded
+        type: file-contains
+        path: verification.json
+        value: READY skillbench-demo
+        weight: 2
