@@ -5,6 +5,14 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to retry
+        required: true
+        type: string
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
@@ -23,10 +31,9 @@ jobs:
       - run: bun run check
       - run: bun run site:check
       - name: Match package version to tag
-        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           PACKAGE_VERSION="$(bun -p 'require("./package.json").version')"
-          test "v${PACKAGE_VERSION}" = "${GITHUB_REF_NAME}"
+          test "v${PACKAGE_VERSION}" = "${RELEASE_TAG}"
       - run: npm pack --dry-run
 
   binaries:
@@ -83,7 +90,7 @@ jobs:
 
   github-release:
     name: Publish GitHub release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
     needs:
       - binaries
       - npm
@@ -94,6 +101,6 @@ jobs:
           path: artifacts
       - run: find artifacts -type f -name 'skillbench-*' -exec cp {} . \;
       - run: sha256sum skillbench-* > SHA256SUMS
-      - run: gh release create "$GITHUB_REF_NAME" skillbench-* SHA256SUMS --verify-tag --generate-notes
+      - run: gh release create "$RELEASE_TAG" skillbench-* SHA256SUMS --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ github.token }}
