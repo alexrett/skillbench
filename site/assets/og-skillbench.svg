@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#071016"/>
+  <path d="M1 1h1198v628H1zM34 34h18M34 34v18M1166 34h-18M1166 34v18M34 596h18M34 596v-18M1166 596h-18M1166 596v-18" fill="none" stroke="#566168" stroke-width="2"/>
+  <text x="64" y="84" fill="#f1f2ef" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="32" font-weight="700">skillbench</text>
+  <rect x="258" y="59" width="13" height="27" fill="#dfff00"/>
+  <text x="64" y="205" fill="#f1f2ef" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="700" letter-spacing="-3">Turn repeated agent failures</text>
+  <text x="64" y="288" fill="#f1f2ef" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="700" letter-spacing="-3">into tested skills.</text>
+  <text x="68" y="352" fill="#b8bec0" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="22">AUTHOR  /  PROVE  /  VERSION  /  SHIP</text>
+  <rect x="64" y="406" width="1072" height="145" fill="#0a141b" stroke="#566168" stroke-width="2"/>
+  <rect x="86" y="428" width="7" height="101" fill="#dfff00"/>
+  <text x="122" y="465" fill="#dfff00" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="21">TASK A/B</text>
+  <text x="122" y="511" fill="#b8bec0" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="25">baseline 0.40</text>
+  <text x="388" y="511" fill="#f1f2ef" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="25">→</text>
+  <text x="446" y="511" fill="#dfff00" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="25">skill 1.00</text>
+  <text x="917" y="511" fill="#f6a800" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="25">Δ +0.60</text>
+</svg>

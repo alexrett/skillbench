@@ -1,0 +1,16 @@
+{
+  "name": "Skillbench",
+  "short_name": "Skillbench",
+  "description": "The local authoring and evidence loop for portable Agent Skills.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071016",
+  "theme_color": "#dfff00",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
