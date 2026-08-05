@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — 2026-08-05
+
+- Publish releases through npm Trusted Publishing with GitHub Actions OIDC.
+- Replace the condensed website headline stack with a wider, clearer type hierarchy.
+- Bust the GitHub Pages stylesheet cache for the typography update.
+
 ## 0.3.0 — 2026-08-05
 
 First public release.

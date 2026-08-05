@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import packageJson from "../package.json";
 
 async function cli(...args: string[]): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const subprocess = Bun.spawn(["bun", "run", "src/cli.tsx", ...args], {
@@ -20,7 +21,7 @@ describe("CLI", () => {
   test("prints the package version", async () => {
     const result = await cli("--version");
     expect(result.exitCode).toBe(0);
-    expect(result.stdout.trim()).toBe("0.3.0");
+    expect(result.stdout.trim()).toBe(packageJson.version);
   });
 
   test("prints help instead of trying to render when stdin is not a TTY", async () => {

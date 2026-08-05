@@ -1,6 +1,6 @@
 {
   "name": "skillbench-cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Build, validate, evaluate, and distribute portable Agent Skills from a polished terminal UI.",
   "private": false,
   "author": "Aleksei Malikov",
