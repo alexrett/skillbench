@@ -1,15 +1,6 @@
 version: 2
+# Runtime dependencies stay manual until Dependabot updates bun.lock alongside package.json.
 updates:
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: weekly
-      day: monday
-    groups:
-      runtime-and-tooling:
-        patterns:
-          - "*"
-
   - package-ecosystem: github-actions
     directory: /
     schedule:
