@@ -31,8 +31,8 @@
     />
     <meta name="twitter:image" content="https://alexrett.github.io/skillbench/assets/og-skillbench.png" />
 
-    <link rel="stylesheet" href="styles.css?v=0.3.1" />
-    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="styles.css?v=0.3.1.1" />
+    <script src="script.js?v=0.3.1.1" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -45,12 +45,12 @@
 
         <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
           <span class="sr-only">Toggle navigation</span>
-          <span aria-hidden="true">MENU</span>
+          <span class="nav-toggle-label" aria-hidden="true">MENU</span>
         </button>
 
         <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
           <a href="#why">Why</a>
-          <a href="#workflow">Workflow</a>
+          <a href="#case-study">Case study</a>
           <a href="#compare">Compare</a>
           <a href="#docs">Docs</a>
           <a class="nav-github" href="https://github.com/alexrett/skillbench">GitHub <span aria-hidden="true">↗</span></a>
@@ -191,6 +191,49 @@
         </div>
       </section>
 
+      <section id="case-study" class="case-study section-frame" aria-labelledby="case-study-title">
+        <div class="section-inner frame-width crosshair-frame">
+          <div class="case-heading">
+            <div>
+              <h2 id="case-study-title">A real project, not a demo fixture.</h2>
+              <p>
+                We installed Skillbench from npm, generated a project-specific skill for
+                <a href="https://malikov.tech">malikov.tech</a>, and gave the same responsive carousel repair to fresh agents with and without it.
+              </p>
+            </div>
+            <a class="case-project" href="https://malikov.tech">OPEN MALIKOV.TECH <span aria-hidden="true">↗</span></a>
+          </div>
+
+          <div class="case-report" aria-label="malikov.tech Skillbench field report">
+            <div class="case-problem">
+              <span>FIELD REPORT / 001</span>
+              <h3>Make carousel status follow the last card a reader can actually see.</h3>
+              <p>
+                The project rule was precise: use the last <code>slidesInView()</code> item, require
+                <code>inViewThreshold: 0.5</code>, and share that position across the counter, note, progress, and terminal navigation state.
+              </p>
+            </div>
+
+            <dl class="case-metrics">
+              <div><dt>DISCOVERY</dt><dd>8 / 8</dd><span>positive + near-miss cases</span></div>
+              <div><dt>BASELINE</dt><dd>0.50–0.80</dd><span>varied across two fresh runs</span></div>
+              <div class="case-metric-skill"><dt>WITH SKILL</dt><dd>1.00 / 1.00</dd><span>all deterministic checks passed</span></div>
+              <div><dt>OBSERVED Δ</dt><dd>+0.20–+0.50</dd><span>same fixture, hidden rubric</span></div>
+            </dl>
+
+            <div class="case-trace" aria-label="What changed in the agent behavior">
+              <span>WITHOUT PROJECT MEMORY</span>
+              <p>One run found visibility events but missed the 50% readability threshold.</p>
+              <i aria-hidden="true">→</i>
+              <span>WITH THE SKILL</span>
+              <p>Both runs reproduced the complete responsive rule and scored 10 / 10.</p>
+            </div>
+          </div>
+
+          <p class="case-caveat"><span>N=2</span>This is a transparent dogfood result, not a universal benchmark claim. The baseline variance is exactly why Skillbench keeps the fixture, rubric, and repeated runs inspectable.</p>
+        </div>
+      </section>
+
       <section id="docs" class="docs section-frame" aria-labelledby="docs-title">
         <div class="section-inner frame-width crosshair-frame">
           <div class="docs-heading">
@@ -268,11 +311,11 @@
                 </tr>
               </thead>
               <tbody>
-                <tr><th scope="row">Guided construction</th><td>DIY</td><td>Template</td><td>Task authoring</td><td>TUI + brief</td></tr>
-                <tr><th scope="row">Static validation</th><td>DIY</td><td>Basic</td><td>Task checks</td><td>Built in</td></tr>
-                <tr><th scope="row">Trigger boundaries</th><td>DIY</td><td>—</td><td>Benchmark scale</td><td>Local eval</td></tr>
-                <tr><th scope="row">Behavior A/B</th><td>DIY</td><td>—</td><td>Research runs</td><td>Baseline vs skill</td></tr>
-                <tr><th scope="row">Distribution</th><td>Git</td><td>Multi-agent install</td><td>Dataset</td><td>Git registry + lock</td></tr>
+                <tr><th scope="row">Guided construction</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">Template</td><td data-label="SkillsBench">Task authoring</td><td data-label="Skillbench">TUI + brief</td></tr>
+                <tr><th scope="row">Static validation</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">Basic</td><td data-label="SkillsBench">Task checks</td><td data-label="Skillbench">Built in</td></tr>
+                <tr><th scope="row">Trigger boundaries</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">—</td><td data-label="SkillsBench">Benchmark scale</td><td data-label="Skillbench">Local eval</td></tr>
+                <tr><th scope="row">Behavior A/B</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">—</td><td data-label="SkillsBench">Research runs</td><td data-label="Skillbench">Baseline vs skill</td></tr>
+                <tr><th scope="row">Distribution</th><td data-label="Manual SKILL.md">Git</td><td data-label="npx skills">Multi-agent install</td><td data-label="SkillsBench">Dataset</td><td data-label="Skillbench">Git registry + lock</td></tr>
               </tbody>
             </table>
           </div>

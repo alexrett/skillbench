@@ -41,17 +41,37 @@ for (const button of copyButtons) {
 
 const navToggle = document.querySelector(".nav-toggle");
 const siteNav = document.querySelector(".site-nav");
+const navToggleLabel = navToggle?.querySelector(".nav-toggle-label");
+
+function setNavigationOpen(open, { restoreFocus = false } = {}) {
+  siteNav?.classList.toggle("open", open);
+  document.body.classList.toggle("nav-open", open);
+  navToggle?.setAttribute("aria-expanded", String(open));
+  if (navToggleLabel) navToggleLabel.textContent = open ? "CLOSE" : "MENU";
+  if (restoreFocus) navToggle?.focus();
+}
 
 navToggle?.addEventListener("click", () => {
-  const open = siteNav?.classList.toggle("open") ?? false;
-  navToggle.setAttribute("aria-expanded", String(open));
+  const open = navToggle.getAttribute("aria-expanded") !== "true";
+  setNavigationOpen(open);
 });
 
 siteNav?.querySelectorAll("a").forEach((link) => {
   link.addEventListener("click", () => {
-    siteNav.classList.remove("open");
-    navToggle?.setAttribute("aria-expanded", "false");
+    setNavigationOpen(false);
   });
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && navToggle?.getAttribute("aria-expanded") === "true") {
+    setNavigationOpen(false, { restoreFocus: true });
+  }
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 820 && navToggle?.getAttribute("aria-expanded") === "true") {
+    setNavigationOpen(false);
+  }
 });
 
 const terminalRows = [...document.querySelectorAll(".terminal-row")];
