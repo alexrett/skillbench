@@ -126,11 +126,12 @@ const evidenceConsole = document.querySelector(".evidence-console");
 const evidenceModes = {
   task: {
     leftLabel: "BASELINE",
-    leftCommand: "$ skillbench eval ./release-check --task",
+    leftCommand: "$ skillbench challenge ./release-check --runs 3",
     leftScore: "0.40",
     rightLabel: "WITH SKILL",
-    rightCommand: "$ skillbench eval ./release-check --task",
+    rightCommand: "$ skillbench challenge ./release-check --runs 3",
     rightScore: "1.00",
+    deltaLabel: "PROVEN",
     delta: "+0.60",
     rubric: ["✓ verification.json exists", "✓ status contains READY", "✓ final mentions live evidence"],
   },
@@ -141,6 +142,7 @@ const evidenceModes = {
     rightLabel: "NEAR MISS",
     rightCommand: "$ skillbench eval ./release-check",
     rightScore: "5 / 5",
+    deltaLabel: "BOUNDARY",
     delta: "CLEAN",
     rubric: ["✓ direct requests discovered", "✓ adjacent requests ignored", "✓ expected labels stayed hidden"],
   },
@@ -165,6 +167,7 @@ function renderEvalMode(mode) {
     right.querySelector("code").textContent = content.rightCommand;
     right.querySelector("strong").textContent = content.rightScore;
   }
+  evidenceConsole.querySelector(".score-delta span").textContent = content.deltaLabel;
   evidenceConsole.querySelector(".score-delta strong").textContent = content.delta;
   evidenceConsole.querySelectorAll(".rubric-grid span").forEach((row, index) => {
     row.textContent = content.rubric[index] ?? "";
@@ -176,16 +179,16 @@ evalButtons.forEach((button) => button.addEventListener("click", () => renderEva
 const commandModes = {
   headless: [
     "skillbench build ./brief.json --out ./.agents/skills/release-check",
-    "skillbench validate ./.agents/skills/release-check --json",
+    "skillbench check ./.agents/skills/release-check --strict --fail-on high --json",
     "skillbench eval ./.agents/skills/release-check --json",
-    "skillbench eval ./.agents/skills/release-check --task --json",
+    "skillbench challenge ./.agents/skills/release-check --runs 3 --report evidence.json --json",
     "skillbench registry add ./.agents/skills/release-check --version 0.1.0 --json",
   ],
   guided: [
     "skillbench",
-    "skillbench validate ./.agents/skills/release-check",
+    "skillbench check ./.agents/skills/release-check --strict --fail-on high",
     "skillbench eval ./.agents/skills/release-check",
-    "skillbench eval ./.agents/skills/release-check --task",
+    "skillbench challenge ./.agents/skills/release-check --runs 3 --report evidence.json",
     "skillbench registry add ./.agents/skills/release-check --version 0.1.0",
   ],
 };

@@ -6,7 +6,7 @@
     <title>Skillbench — Turn agent failures into tested skills</title>
     <meta
       name="description"
-      content="A local-first CLI and TUI for authoring portable Agent Skills, testing trigger boundaries, comparing behavior, and shipping immutable versions."
+      content="A local-first CLI and TUI for authoring portable Agent Skills, auditing threats, challenging behavior against a baseline, and gating skill repositories in CI."
     />
     <meta name="theme-color" content="#071016" />
     <meta name="color-scheme" content="dark" />
@@ -19,7 +19,7 @@
     <meta property="og:title" content="Turn repeated agent failures into tested skills." />
     <meta
       property="og:description"
-      content="Author portable Agent Skills, prove when they trigger, compare behavior against a baseline, and ship immutable versions."
+      content="Author portable Agent Skills, audit suspicious packages, challenge behavior against a baseline, and gate repositories in CI."
     />
     <meta property="og:url" content="https://alexrett.github.io/skillbench/" />
     <meta property="og:image" content="https://alexrett.github.io/skillbench/assets/og-skillbench.png" />
@@ -31,8 +31,8 @@
     />
     <meta name="twitter:image" content="https://alexrett.github.io/skillbench/assets/og-skillbench.png" />
 
-    <link rel="stylesheet" href="styles.css?v=0.3.1.1" />
-    <script src="script.js?v=0.3.1.1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=0.4.0" />
+    <script src="script.js?v=0.4.0" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -50,6 +50,7 @@
 
         <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
           <a href="#why">Why</a>
+          <a href="#security">Security</a>
           <a href="#case-study">Case study</a>
           <a href="#compare">Compare</a>
           <a href="#docs">Docs</a>
@@ -64,8 +65,8 @@
           <div class="hero-copy">
             <h1 id="hero-title">Turn repeated agent failures into tested skills.</h1>
             <p>
-              Author portable <code>SKILL.md</code> packages, prove when they trigger, compare behavior against a baseline,
-              and ship immutable versions.
+              Author portable <code>SKILL.md</code> packages, audit suspicious instructions, challenge behavior against a baseline,
+              and block weak skills in CI.
             </p>
 
             <div class="install-stack">
@@ -89,7 +90,7 @@
           <div class="workbench-shell" aria-label="Interactive Skillbench workbench preview">
             <div class="terminal-bar">
               <strong>skillbench / workbench</strong>
-              <span>v0.3.1 / early release</span>
+              <span>v0.4.0 / evidence first</span>
             </div>
 
             <div class="terminal-menu" role="listbox" aria-label="Workbench actions">
@@ -103,25 +104,25 @@
                 <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="m8 12 2.5 2.5 5.5-6" /></svg>
                 <span>VALIDATE</span>
               </button>
-              <button class="terminal-row" type="button" role="option" aria-selected="false" data-result="10 / 10 discovery cases pass">
+              <button class="terminal-row" type="button" role="option" aria-selected="false" data-result="critical 0 / high 0 / static only">
                 <span class="row-arrow" aria-hidden="true">›</span>
-                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6z" /></svg>
-                <span>TRIGGER EVAL</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 20 7v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7zM8.5 12l2.2 2.2 4.8-5" /></svg>
+                <span>SECURITY AUDIT</span>
               </button>
-              <button class="terminal-row active" type="button" role="option" aria-selected="true" data-result="baseline 0.40|skill 1.00|Δ +0.60">
+              <button class="terminal-row active" type="button" role="option" aria-selected="true" data-result="baseline 0.40|skill 1.00|/|PROVEN +0.60">
                 <span class="row-arrow" aria-hidden="true">›</span>
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v16M5 7h14M7 7l-3 6h6L7 7ZM17 7l-3 6h6l-3-6ZM9 20h6" /></svg>
-                <span>TASK A/B</span>
+                <span>CHALLENGE</span>
               </button>
-              <button class="terminal-row" type="button" role="option" aria-selected="false" data-result="checksum verified / lock written">
+              <button class="terminal-row" type="button" role="option" aria-selected="false" data-result="validate + lint + audit / PASS">
                 <span class="row-arrow" aria-hidden="true">›</span>
-                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9" /></svg>
-                <span>REGISTRY</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9l2 2-2 2M12 14h4" /></svg>
+                <span>REPOSITORY GATE</span>
               </button>
             </div>
 
             <div class="terminal-result" aria-live="polite">
-              <span>baseline 0.40</span><b aria-hidden="true">→</b><strong>skill 1.00</strong><em>/</em><mark>Δ +0.60</mark>
+              <span>baseline 0.40</span><b aria-hidden="true">→</b><strong>skill 1.00</strong><em>/</em><mark>PROVEN +0.60</mark>
             </div>
             <div class="terminal-keys"><span>↑↓ navigate</span><span><kbd>enter</kbd> select</span><span><kbd>q</kbd> quit</span></div>
           </div>
@@ -149,12 +150,12 @@
               <p>Use the guided TUI or a JSON brief to generate a portable skill package.</p>
             </li>
             <li tabindex="0">
-              <span>03 / PROVE</span>
-              <p>Test discovery boundaries, then run the same task with and without the skill.</p>
+              <span>03 / INSPECT</span>
+              <p>Separate portable validation from strict lint, then scan every bundled file without executing it.</p>
             </li>
             <li tabindex="0">
-              <span>04 / SHIP</span>
-              <p>Version, checksum, install, and verify every package.</p>
+              <span>04 / CHALLENGE + SHIP</span>
+              <p>Run repeated AB/BA trials, demand a verdict, then gate and version the evidence.</p>
             </li>
           </ol>
 
@@ -170,16 +171,16 @@
           <div class="evidence-console" data-mode="task">
             <div class="score-panel baseline">
               <span>BASELINE</span>
-              <code>$ skillbench eval ./release-check --task</code>
+              <code>$ skillbench challenge ./release-check --runs 3</code>
               <strong>0.40</strong>
             </div>
             <div class="score-arrow" aria-hidden="true">→</div>
             <div class="score-panel with-skill">
               <span>WITH SKILL</span>
-              <code>$ skillbench eval ./release-check --task</code>
+              <code>$ skillbench challenge ./release-check --runs 3</code>
               <strong>1.00</strong>
             </div>
-            <div class="score-delta"><span>Δ</span><strong>+0.60</strong></div>
+            <div class="score-delta"><span>PROVEN</span><strong>+0.60</strong></div>
 
             <div class="rubric-grid">
               <span>✓ verification.json exists</span><b>PASS</b>
@@ -187,7 +188,42 @@
               <span>✓ final mentions live evidence</span><b>PASS</b>
             </div>
           </div>
-          <p class="evidence-note"><span aria-hidden="true">i</span>The rubric stays hidden from both agent runs. Workspaces are isolated and network-disabled.</p>
+          <p class="evidence-note"><span aria-hidden="true">i</span>The runtime package is copied faithfully; <code>evals/</code>, the rubric, and the other run stay hidden. Order is counterbalanced AB/BA.</p>
+        </div>
+      </section>
+
+      <section id="security" class="security section-frame" aria-labelledby="security-title">
+        <div class="section-inner frame-width crosshair-frame">
+          <div class="security-heading">
+            <h2 id="security-title">Treat every skill as untrusted input.</h2>
+            <p>Skillbench reads first and executes nothing. The same deterministic gate protects local installs, registries, and pull requests.</p>
+          </div>
+
+          <div class="security-grid">
+            <div class="audit-console" aria-label="Static skill security audit example">
+              <div><span>$</span><code>skillbench audit ./unknown-skill --fail-on high</code></div>
+              <ol>
+                <li><span>CRITICAL</span><code>credential-file-access</code><b>BLOCK</b></li>
+                <li><span>CRITICAL</span><code>download-pipe-shell</code><b>BLOCK</b></li>
+                <li><span>HIGH</span><code>prompt-instruction-override</code><b>BLOCK</b></li>
+                <li><span>HIGH</span><code>external-symlink</code><b>BLOCK</b></li>
+              </ol>
+              <p>static only / package was not executed</p>
+            </div>
+
+            <div class="gate-contract">
+              <h3>One gate, three questions.</h3>
+              <dl>
+                <div><dt>01</dt><dd><strong>VALID?</strong><span>Portable metadata, references, and eval contracts.</span></dd></div>
+                <div><dt>02</dt><dd><strong>WELL AUTHORED?</strong><span>Optional strict structure without pretending it is a standard.</span></dd></div>
+                <div><dt>03</dt><dd><strong>SUSPICIOUS?</strong><span>Secrets, exfiltration, unsafe shell, sandbox bypass, Unicode, and path escape.</span></dd></div>
+              </dl>
+              <button class="gate-command copy-command" type="button" data-copy="skillbench check --strict --fail-on high --report skillbench-report.json">
+                <code>skillbench check --strict --fail-on high</code><span class="copy-label" aria-live="polite">Copy CI gate</span>
+              </button>
+              <p>Heuristic preflight, not a malware verdict. Hostile packages still belong in a disposable external sandbox.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -231,6 +267,37 @@
           </div>
 
           <p class="case-caveat"><span>N=2</span>This is a transparent dogfood result, not a universal benchmark claim. The baseline variance is exactly why Skillbench keeps the fixture, rubric, and repeated runs inspectable.</p>
+
+          <div id="self-challenge" class="honesty-report" aria-label="Skillbench self-challenge result">
+            <div>
+              <strong>REDUNDANT</strong>
+              <h3>Our own example failed the usefulness challenge.</h3>
+              <p><code>verify-real-outcome</code> scored 100% with and without the skill over two counterbalanced runs. Fewer tokens did not offset slower execution, so the honest verdict is not “pass”. <a href="evidence/verify-real-outcome-v0.4.0.json">Inspect evidence JSON</a>.</p>
+            </div>
+            <dl>
+              <div><dt>QUALITY Δ</dt><dd>0.00</dd></div>
+              <div><dt>TOKENS</dt><dd>−3.1%</dd></div>
+              <div><dt>LATENCY</dt><dd>+7.1%</dd></div>
+              <div><dt>CHALLENGE EXIT</dt><dd>1</dd></div>
+            </dl>
+          </div>
+          <p class="polimat-note"><strong>POLIMAT CHECK:</strong> its existing <code>ticket</code> skill now passes portable validation; strict lint separately reports missing Skillbench-specific sections. Fixing that false incompatibility was more valuable than inventing another benchmark win.</p>
+
+          <article id="responsive-skill" class="skill-seed">
+            <div>
+              <h3>Then the mobile bug became a skill.</h3>
+              <p><code>responsive-release-proof</code> encodes the missing invariant: real desktop/mobile browser evidence, <code>scrollWidth === innerWidth</code>, console health, an interaction, screenshots, and an honest non-ready state when no browser exists.</p>
+              <a href="https://github.com/alexrett/skillbench/tree/main/examples/generated/responsive-release-proof">Inspect the complete skill + hidden eval <span aria-hidden="true">→</span></a>
+              <a href="evidence/responsive-release-proof-v0.4.0.json">Open the sanitized evidence JSON <span aria-hidden="true">→</span></a>
+            </div>
+            <dl>
+              <div><dt>VERDICT</dt><dd>PROVEN</dd></div>
+              <div><dt>BASELINE</dt><dd>25%</dd></div>
+              <div><dt>WITH SKILL</dt><dd>95%</dd></div>
+              <div><dt>AVERAGE Δ</dt><dd>+70%</dd></div>
+            </dl>
+            <p><span>N=2 AB/BA</span>The skill improved both orders, but used 26% more tokens and took 45% longer. Challenge belongs at an evidence/release boundary; the deterministic security gate belongs on every PR.</p>
+          </article>
         </div>
       </section>
 
@@ -255,16 +322,16 @@
                 <code>skillbench new</code>
               </li>
               <li tabindex="0">
-                <div><span>02</span><strong>Validate</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench validate ./.agents/skills/release-check" aria-label="Copy validate command"><span class="copy-label">Copy</span></button></div>
-                <code>skillbench validate ./.agents/skills/release-check</code>
+                <div><span>02</span><strong>Inspect + gate</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench check ./.agents/skills/release-check --strict --fail-on high" aria-label="Copy repository gate command"><span class="copy-label">Copy</span></button></div>
+                <code>skillbench check ./.agents/skills/release-check --strict --fail-on high</code>
               </li>
               <li tabindex="0">
                 <div><span>03</span><strong>Test discovery</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench eval ./.agents/skills/release-check" aria-label="Copy discovery test command"><span class="copy-label">Copy</span></button></div>
                 <code>skillbench eval ./.agents/skills/release-check</code>
               </li>
               <li tabindex="0">
-                <div><span>04</span><strong>Compare behavior</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench eval ./.agents/skills/release-check --task" aria-label="Copy task evaluation command"><span class="copy-label">Copy</span></button></div>
-                <code>skillbench eval ./.agents/skills/release-check --task</code>
+                <div><span>04</span><strong>Challenge usefulness</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench challenge ./.agents/skills/release-check --runs 3 --report evidence.json" aria-label="Copy skill challenge command"><span class="copy-label">Copy</span></button></div>
+                <code>skillbench challenge ./.agents/skills/release-check --runs 3 --report evidence.json</code>
               </li>
               <li tabindex="0">
                 <div><span>05</span><strong>Version and install</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench registry add ./.agents/skills/release-check --version 0.1.0" aria-label="Copy registry command"><span class="copy-label">Copy</span></button></div>
@@ -278,6 +345,7 @@
 ├── SKILL.md
 ├── agents/
 │   └── openai.yaml
+├── scripts/ or references/
 └── evals/
     ├── cases.yaml
     ├── tasks.yaml
@@ -286,8 +354,8 @@
             </aside>
           </div>
 
-          <a class="ci-rail" href="https://github.com/alexrett/skillbench#workflows">
-            <span>CI output:</span> <code>--plain</code> or <code>--json</code><i aria-hidden="true">›</i>
+          <a class="ci-rail" href="https://github.com/alexrett/skillbench#repository-gate">
+            <span>Reusable GitHub Action:</span> <code>alexrett/skillbench@v0.4.0</code><i aria-hidden="true">›</i>
           </a>
         </div>
       </section>
@@ -313,8 +381,9 @@
               <tbody>
                 <tr><th scope="row">Guided construction</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">Template</td><td data-label="SkillsBench">Task authoring</td><td data-label="Skillbench">TUI + brief</td></tr>
                 <tr><th scope="row">Static validation</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">Basic</td><td data-label="SkillsBench">Task checks</td><td data-label="Skillbench">Built in</td></tr>
+                <tr><th scope="row">Threat preflight</th><td data-label="Manual SKILL.md">Manual review</td><td data-label="npx skills">—</td><td data-label="SkillsBench">Sandbox dependent</td><td data-label="Skillbench">Static audit + CI gate</td></tr>
                 <tr><th scope="row">Trigger boundaries</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">—</td><td data-label="SkillsBench">Benchmark scale</td><td data-label="Skillbench">Local eval</td></tr>
-                <tr><th scope="row">Behavior A/B</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">—</td><td data-label="SkillsBench">Research runs</td><td data-label="Skillbench">Baseline vs skill</td></tr>
+                <tr><th scope="row">Behavior A/B</th><td data-label="Manual SKILL.md">DIY</td><td data-label="npx skills">—</td><td data-label="SkillsBench">Research runs</td><td data-label="Skillbench">AB/BA + ROI verdict</td></tr>
                 <tr><th scope="row">Distribution</th><td data-label="Manual SKILL.md">Git</td><td data-label="npx skills">Multi-agent install</td><td data-label="SkillsBench">Dataset</td><td data-label="Skillbench">Git registry + lock</td></tr>
               </tbody>
             </table>
@@ -362,7 +431,7 @@
           <a href="https://www.npmjs.com/package/skillbench-cli">npm</a>
           <a href="https://github.com/alexrett/skillbench/blob/main/LICENSE">MIT License</a>
         </nav>
-        <span>v0.3.1 / open source</span>
+        <span>v0.4.0 / open source</span>
       </div>
     </footer>
   </body>

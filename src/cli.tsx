@@ -1,15 +1,17 @@
 #!/usr/bin/env bun
 import React from "react";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { render } from "@semos-labs/glyph";
+import { checkSkills } from "./check.ts";
 import { CodexTriggerRunner } from "./eval/codex-runner.ts";
 import { loadTriggerEvalSuite } from "./eval/load.ts";
 import { runTriggerEvals } from "./eval/run.ts";
 import type { TriggerEvalReport } from "./eval/types.ts";
 import { writeSkillPackage } from "./generate.ts";
 import { defaultOutputPath, type SkillDraft } from "./model.ts";
+import { lintSkillDirectory } from "./lint.ts";
 import {
   addSkillToRegistry,
   checkInstalledSkills,
@@ -22,6 +24,8 @@ import {
   searchRegistry,
 } from "./registry/registry.ts";
 import { readLock } from "./registry/lock.ts";
+import { auditSkillDirectory } from "./security/audit.ts";
+import type { SecuritySeverity, SkillSecurityReport } from "./security/types.ts";
 import { CodexTaskRunner } from "./task-eval/codex-runner.ts";
 import { loadTaskEvalSuite } from "./task-eval/load.ts";
 import { runTaskEvals } from "./task-eval/run.ts";
@@ -38,8 +42,12 @@ const HELP = `Skillbench — build testable Agent Skills
 Usage:
   skillbench new [--out <directory>]       Open the Glyph constructor
   skillbench build <brief.json> [--out <directory>]
-  skillbench validate <skill-directory> [--json]
-  skillbench eval <skill-directory> [--task] [--model <model>] [--plain|--json]
+  skillbench validate <skill-directory> [--json] [--report <file>]
+  skillbench lint <skill-directory> [--json] [--report <file>]
+  skillbench audit <skill-directory> [--fail-on high] [--json] [--report <file>]
+  skillbench check [paths...] [--strict] [--fail-on high] [--json] [--report <file>]
+  skillbench eval <skill-directory> [--task] [--model <model>] [--plain|--json] [--report <file>]
+  skillbench challenge <skill-directory> [--runs 3] [--seed 1] [--model <model>] [--report <file>]
   skillbench eval <skill-directory> --prompt <request> --expect trigger|skip
   skillbench registry init [directory] [--name <name>]
   skillbench registry add <skill-directory> --registry <directory> --version <version>
@@ -57,7 +65,7 @@ function option(args: string[], name: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined;
 }
 
-const VALUE_OPTIONS = new Set(["--out", "--model", "--codex-bin", "--concurrency", "--limit", "--timeout", "--registry", "--version", "--to", "--name", "--prompt", "--expect"]);
+const VALUE_OPTIONS = new Set(["--out", "--model", "--codex-bin", "--concurrency", "--limit", "--timeout", "--registry", "--version", "--to", "--name", "--prompt", "--expect", "--runs", "--seed", "--order", "--fail-on", "--report"]);
 
 function positional(args: string[]): string[] {
   const values: string[] = [];
@@ -81,6 +89,35 @@ function percent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
 
+function signedPercent(value: number | undefined): string {
+  if (value === undefined) return "n/a";
+  return `${value >= 0 ? "+" : ""}${percent(value)}`;
+}
+
+function severityOption(args: string[]): SecuritySeverity {
+  const value = option(args, "--fail-on") ?? "high";
+  if (!["info", "low", "medium", "high", "critical"].includes(value)) {
+    throw new Error("--fail-on must be info, low, medium, high, or critical");
+  }
+  return value as SecuritySeverity;
+}
+
+function orderOption(args: string[]): "fixed" | "counterbalanced" {
+  const value = option(args, "--order") ?? "fixed";
+  if (value !== "fixed" && value !== "counterbalanced") {
+    throw new Error("--order must be fixed or counterbalanced");
+  }
+  return value;
+}
+
+async function writeJsonReport(args: string[], value: unknown): Promise<void> {
+  const reportPath = option(args, "--report");
+  if (!reportPath) return;
+  const resolved = path.resolve(reportPath);
+  await mkdir(path.dirname(resolved), { recursive: true });
+  await writeFile(resolved, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
 function printEvalReport(report: TriggerEvalReport): void {
   console.log(`${report.passed ? "PASS" : "FAIL"} ${report.skill} · ${report.runner}${report.model ? `/${report.model}` : ""} · ${report.durationMs}ms`);
   console.log(`accuracy ${percent(report.metrics.accuracy)} · precision ${percent(report.metrics.precision)} · recall ${percent(report.metrics.recall)} · specificity ${percent(report.metrics.specificity)}`);
@@ -94,14 +131,28 @@ function printEvalReport(report: TriggerEvalReport): void {
 
 function printTaskEvalReport(report: TaskEvalReport): void {
   console.log(`${report.passed ? "PASS" : "FAIL"} ${report.skill} · task A/B · ${report.runner}${report.model ? `/${report.model}` : ""} · ${report.durationMs}ms`);
+  console.log(`verdict ${report.verdict.toUpperCase()} · ${report.metrics.runs} paired run${report.metrics.runs === 1 ? "" : "s"}`);
   console.log(`baseline ${percent(report.metrics.averageBaselineScore)} · skill ${percent(report.metrics.averageSkillScore)} · delta ${report.metrics.averageDelta >= 0 ? "+" : ""}${percent(report.metrics.averageDelta)}`);
+  console.log(`latency ${Math.round(report.metrics.averageBaselineDurationMs)}ms → ${Math.round(report.metrics.averageSkillDurationMs)}ms (${signedPercent(report.metrics.durationDeltaPercent)}) · tokens ${report.metrics.averageBaselineTokens === undefined ? "n/a" : `${Math.round(report.metrics.averageBaselineTokens)} → ${Math.round(report.metrics.averageSkillTokens ?? 0)} (${signedPercent(report.metrics.tokenDeltaPercent)})`}`);
   console.log(`improved ${report.metrics.improved} · unchanged ${report.metrics.unchanged} · regressed ${report.metrics.regressed}`);
   for (const result of report.results) {
-    console.log(`${result.passed ? "pass" : "FAIL"} ${result.caseId} baseline=${percent(result.baseline.score)} skill=${percent(result.skill.score)} delta=${result.delta >= 0 ? "+" : ""}${percent(result.delta)}`);
+    console.log(`${result.passed ? "pass" : "FAIL"} ${result.caseId}#${result.run} order=${result.order.join("→")} baseline=${percent(result.baseline.score)} skill=${percent(result.skill.score)} delta=${result.delta >= 0 ? "+" : ""}${percent(result.delta)}`);
     for (const entry of result.skill.rubric.filter((rubric) => !rubric.passed)) {
       console.log(`  × ${entry.description}: ${entry.diagnostic}`);
     }
     if (result.keptWorkspaces) console.log(`  kept ${result.keptWorkspaces.baseline} ${result.keptWorkspaces.skill}`);
+  }
+}
+
+function printSecurityReport(report: SkillSecurityReport): void {
+  console.log(`${report.passed ? "PASS" : "FAIL"} security ${report.root} · fail-on ${report.failOn}`);
+  console.log(`critical ${report.summary.critical} · high ${report.summary.high} · medium ${report.summary.medium} · low ${report.summary.low} · info ${report.summary.info}`);
+  for (const finding of report.findings) {
+    console.log(`${finding.severity.toUpperCase()} [${finding.code}] ${finding.path}${finding.line ? `:${finding.line}` : ""} ${finding.message}`);
+    console.log(`  ${finding.recommendation}`);
+  }
+  for (const suppression of report.suppressions) {
+    console.log(`allow [${suppression.code}] ${suppression.path}:${suppression.line} ${suppression.reason}`);
   }
 }
 
@@ -157,6 +208,7 @@ async function main(): Promise<void> {
   if (command === "validate") {
     const [target = "."] = positional(args);
     const result = await validateSkillDirectory(target);
+    await writeJsonReport(args, result);
     if (args.includes("--json")) {
       console.log(JSON.stringify(result, null, 2));
     } else {
@@ -170,10 +222,78 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === "lint") {
+    const [target = "."] = positional(args);
+    const result = await lintSkillDirectory(target);
+    await writeJsonReport(args, result);
+    if (args.includes("--json")) console.log(JSON.stringify(result, null, 2));
+    else {
+      console.log(`${result.valid ? "PASS" : "FAIL"} lint ${result.path}`);
+      if (result.issues.length === 0) console.log("No lint issues");
+      for (const entry of result.issues) console.log(`${entry.severity === "error" ? "error" : "warn"} [${entry.code}] ${entry.message}`);
+    }
+    process.exitCode = result.valid ? 0 : 1;
+    return;
+  }
+
+  if (command === "audit") {
+    const [target = "."] = positional(args);
+    const report = await auditSkillDirectory(target, { failOn: severityOption(args) });
+    await writeJsonReport(args, report);
+    if (args.includes("--json")) console.log(JSON.stringify(report, null, 2));
+    else printSecurityReport(report);
+    process.exitCode = report.passed ? 0 : 1;
+    return;
+  }
+
+  if (command === "check" || command === "ci") {
+    const report = await checkSkills(positional(args), {
+      strict: args.includes("--strict"),
+      failOn: severityOption(args),
+    });
+    await writeJsonReport(args, report);
+    if (args.includes("--json")) console.log(JSON.stringify(report, null, 2));
+    else {
+      console.log(`${report.passed ? "PASS" : "FAIL"} skill gate · ${report.summary.skills} skill${report.summary.skills === 1 ? "" : "s"}`);
+      if (report.skills.length === 0) console.log("error [no-skills] No SKILL.md packages found in conventional roots or supplied paths");
+      for (const skill of report.skills) {
+        console.log(`${skill.passed ? "pass" : "FAIL"} ${skill.path}`);
+        for (const issue of skill.validation.issues.filter((entry) => entry.severity === "error")) console.log(`  error [${issue.code}] ${issue.message}`);
+        for (const issue of skill.lint?.issues.filter((entry) => entry.severity === "error") ?? []) console.log(`  lint [${issue.code}] ${issue.message}`);
+        for (const finding of skill.security.findings) console.log(`  ${finding.severity} [${finding.code}] ${finding.path}${finding.line ? `:${finding.line}` : ""} ${finding.message}`);
+      }
+    }
+    process.exitCode = report.passed ? 0 : 1;
+    return;
+  }
+
+  if (command === "challenge") {
+    const [target = "."] = positional(args);
+    const suite = await loadTaskEvalSuite(target);
+    const runner = new CodexTaskRunner({
+      binary: option(args, "--codex-bin"),
+      model: option(args, "--model"),
+      timeoutMs: numberOption(args, "--timeout", 180_000),
+    });
+    const report = await runTaskEvals(suite, runner, {
+      concurrency: numberOption(args, "--concurrency", 1),
+      limit: option(args, "--limit") ? numberOption(args, "--limit", suite.cases.length) : undefined,
+      keepWorkspaces: args.includes("--keep"),
+      runs: numberOption(args, "--runs", 3),
+      order: option(args, "--order") ? orderOption(args) : "counterbalanced",
+      seed: numberOption(args, "--seed", 1),
+    });
+    await writeJsonReport(args, report);
+    if (args.includes("--json")) console.log(JSON.stringify(report, null, 2));
+    else printTaskEvalReport(report);
+    process.exitCode = report.verdict === "proven" || report.verdict === "efficient" ? 0 : 1;
+    return;
+  }
+
   if (command === "eval") {
     const [target = "."] = positional(args);
     const concurrency = numberOption(args, "--concurrency", 2);
-    const interactive = process.stdin.isTTY && process.stdout.isTTY && !args.includes("--plain") && !args.includes("--json");
+    const interactive = process.stdin.isTTY && process.stdout.isTTY && !args.includes("--plain") && !args.includes("--json") && option(args, "--runs") === undefined;
 
     if (args.includes("--task")) {
       const suite = await loadTaskEvalSuite(target);
@@ -188,7 +308,15 @@ async function main(): Promise<void> {
         render(<TaskEvalApp suite={suite} runner={runner} concurrency={concurrency} limit={limit} keepWorkspaces={args.includes("--keep")} />);
         return;
       }
-      const report = await runTaskEvals(suite, runner, { concurrency, limit, keepWorkspaces: args.includes("--keep") });
+      const report = await runTaskEvals(suite, runner, {
+        concurrency,
+        limit,
+        keepWorkspaces: args.includes("--keep"),
+        runs: numberOption(args, "--runs", 1),
+        order: orderOption(args),
+        seed: numberOption(args, "--seed", 1),
+      });
+      await writeJsonReport(args, report);
       if (args.includes("--json")) console.log(JSON.stringify(report, null, 2));
       else printTaskEvalReport(report);
       process.exitCode = report.passed ? 0 : 1;
@@ -214,6 +342,7 @@ async function main(): Promise<void> {
       return;
     }
     const report = await runTriggerEvals(suite, runner, { concurrency, limit });
+    await writeJsonReport(args, report);
     if (args.includes("--json")) console.log(JSON.stringify(report, null, 2));
     else printEvalReport(report);
     process.exitCode = report.passed ? 0 : 1;

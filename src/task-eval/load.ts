@@ -53,10 +53,10 @@ function parseRubric(raw: unknown, caseId: string, index: number): TaskRubric {
   if (!Number.isFinite(weight) || weight <= 0) throw new Error(`Task case ${caseId} rubric ${id} weight must be positive`);
   const type = nonEmptyString(value.type, `Task case ${caseId} rubric ${id} type`);
 
-  if (type === "file-exists") {
+  if (type === "file-exists" || type === "file-not-exists") {
     return { id, description, weight, type, path: nonEmptyString(value.path, `Task case ${caseId} rubric ${id} path`) };
   }
-  if (type === "file-contains") {
+  if (type === "file-contains" || type === "file-not-contains") {
     return {
       id,
       description,
@@ -79,7 +79,7 @@ function parseRubric(raw: unknown, caseId: string, index: number): TaskRubric {
       expected: value.expected,
     };
   }
-  if (type === "final-contains") {
+  if (type === "final-contains" || type === "final-not-contains") {
     return {
       id,
       description,
@@ -87,6 +87,29 @@ function parseRubric(raw: unknown, caseId: string, index: number): TaskRubric {
       type,
       value: nonEmptyString(value.value, `Task case ${caseId} rubric ${id} value`),
       caseSensitive: value.case_sensitive === true,
+    };
+  }
+  if (type === "command-ran" || type === "command-not-ran") {
+    return {
+      id,
+      description,
+      weight,
+      type,
+      value: nonEmptyString(value.value, `Task case ${caseId} rubric ${id} value`),
+      caseSensitive: value.case_sensitive === true,
+    };
+  }
+  if (type === "command-exit-code") {
+    const expected = Number(value.expected);
+    if (!Number.isInteger(expected)) throw new Error(`Task case ${caseId} rubric ${id} expected must be an integer exit code`);
+    return {
+      id,
+      description,
+      weight,
+      type,
+      value: nonEmptyString(value.value, `Task case ${caseId} rubric ${id} value`),
+      caseSensitive: value.case_sensitive === true,
+      expected,
     };
   }
   throw new Error(`Task case ${caseId} rubric ${id} has unsupported type ${type}`);

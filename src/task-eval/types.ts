@@ -11,8 +11,20 @@ export interface FileExistsRubric extends TaskRubricBase {
   path: string;
 }
 
+export interface FileNotExistsRubric extends TaskRubricBase {
+  type: "file-not-exists";
+  path: string;
+}
+
 export interface FileContainsRubric extends TaskRubricBase {
   type: "file-contains";
+  path: string;
+  value: string;
+  caseSensitive: boolean;
+}
+
+export interface FileNotContainsRubric extends TaskRubricBase {
+  type: "file-not-contains";
   path: string;
   value: string;
   caseSensitive: boolean;
@@ -31,11 +43,35 @@ export interface FinalContainsRubric extends TaskRubricBase {
   caseSensitive: boolean;
 }
 
+export interface FinalNotContainsRubric extends TaskRubricBase {
+  type: "final-not-contains";
+  value: string;
+  caseSensitive: boolean;
+}
+
+export interface CommandContainsRubric extends TaskRubricBase {
+  type: "command-ran" | "command-not-ran";
+  value: string;
+  caseSensitive: boolean;
+}
+
+export interface CommandExitCodeRubric extends TaskRubricBase {
+  type: "command-exit-code";
+  value: string;
+  caseSensitive: boolean;
+  expected: number;
+}
+
 export type TaskRubric =
   | FileExistsRubric
+  | FileNotExistsRubric
   | FileContainsRubric
+  | FileNotContainsRubric
   | JsonEqualsRubric
-  | FinalContainsRubric;
+  | FinalContainsRubric
+  | FinalNotContainsRubric
+  | CommandContainsRubric
+  | CommandExitCodeRubric;
 
 export interface TaskEvalCase {
   id: string;
@@ -63,11 +99,15 @@ export interface TaskRunInput {
   workspacePath: string;
   skillName?: string;
   skillMarkdown?: string;
+  skillPath?: string;
 }
 
 export interface TaskExecution {
   finalOutput: string;
   durationMs: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  commands?: Array<{ command: string; exitCode?: number }>;
 }
 
 export interface TaskRunner {
@@ -96,6 +136,8 @@ export interface TaskVariantResult {
 
 export interface TaskCaseResult {
   caseId: string;
+  run: number;
+  order: TaskVariant[];
   prompt: string;
   baseline: TaskVariantResult;
   skill: TaskVariantResult;
@@ -108,13 +150,23 @@ export interface TaskCaseResult {
 }
 
 export interface TaskEvalMetrics {
+  runs: number;
   averageBaselineScore: number;
   averageSkillScore: number;
   averageDelta: number;
+  deltaStdDev: number;
+  averageBaselineDurationMs: number;
+  averageSkillDurationMs: number;
+  durationDeltaPercent?: number;
+  averageBaselineTokens?: number;
+  averageSkillTokens?: number;
+  tokenDeltaPercent?: number;
   improved: number;
   unchanged: number;
   regressed: number;
 }
+
+export type TaskEvalVerdict = "proven" | "efficient" | "redundant" | "harmful" | "inconclusive";
 
 export interface TaskEvalReport {
   version: 1;
@@ -123,6 +175,7 @@ export interface TaskEvalReport {
   runner: string;
   model?: string;
   passed: boolean;
+  verdict: TaskEvalVerdict;
   durationMs: number;
   thresholds: TaskEvalThresholds;
   metrics: TaskEvalMetrics;

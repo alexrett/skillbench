@@ -22,7 +22,7 @@ function issue(severity: Severity, code: string, message: string): ValidationIss
   return { severity, code, message };
 }
 
-function parseSkillMarkdown(source: string): { frontmatter: Record<string, unknown>; body: string } {
+export function parseSkillMarkdown(source: string): { frontmatter: Record<string, unknown>; body: string } {
   const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match?.[1]) throw new Error("SKILL.md must start with YAML frontmatter");
   const parsed = YAML.parse(match[1]);
@@ -119,6 +119,14 @@ async function validateTaskEvals(root: string, issues: ValidationIssue[]): Promi
       for (const rubric of evalCase.rubric) {
         if (rubricIds.has(rubric.id)) issues.push(issue("error", "duplicate-task-rubric", `Task case ${evalCase.id} repeats rubric id ${rubric.id}`));
         rubricIds.add(rubric.id);
+        if ("value" in rubric && typeof rubric.value === "string" && rubric.value.length >= 8
+          && evalCase.prompt.toLocaleLowerCase().includes(rubric.value.toLocaleLowerCase())) {
+          issues.push(issue(
+            "warning",
+            "task-rubric-leak",
+            `Task case ${evalCase.id} prompt contains the hidden literal used by rubric ${rubric.id}`,
+          ));
+        }
       }
       if (evalCase.fixturePath && !(await fileExists(evalCase.fixturePath))) {
         issues.push(issue("error", "missing-task-fixture", `Task case ${evalCase.id} fixture does not exist`));
@@ -161,13 +169,9 @@ export async function validateSkillDirectory(
     }
     if (!description || description.length > 1024) {
       issues.push(issue("error", "invalid-description", "description must be 1-1024 characters"));
-    } else if (!/use when|использ/i.test(description)) {
+    } else if (!/\buse(?:d)?\s+when\b|использ/i.test(description)) {
       issues.push(issue("warning", "weak-trigger-description", "description should say what the skill does and when to use it"));
     }
-    if (!/^## Process\s*$/m.test(body)) issues.push(issue("warning", "missing-process", "Add a ## Process section"));
-    if (!/^## Done\s*$/m.test(body)) issues.push(issue("error", "missing-done", "Add a checkable ## Done section"));
-    if (body.split(/\r?\n/).length > 500) issues.push(issue("warning", "long-skill", "Keep SKILL.md under 500 lines and disclose references progressively"));
-
     await validateLinkedFiles(root, body, issues);
     if (name) {
       await validateOpenaiYaml(root, name, issues);

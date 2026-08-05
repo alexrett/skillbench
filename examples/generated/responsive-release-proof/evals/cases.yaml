@@ -1,0 +1,36 @@
+version: 1
+skill: "responsive-release-proof"
+cases:
+  - id: "trigger-1"
+    prompt: "Finish this landing-page release and verify desktop and mobile before shipping"
+    should_trigger: true
+  - id: "trigger-2"
+    prompt: "We changed the responsive CSS; do the final browser QA and fix any blockers"
+    should_trigger: true
+  - id: "trigger-3"
+    prompt: "The site build is green. Prove the real page is ready to deploy"
+    should_trigger: true
+  - id: "trigger-4"
+    prompt: "Check this frontend at 390px and desktop, exercise the menu, and capture release evidence"
+    should_trigger: true
+  - id: "near-miss-1"
+    prompt: "Explain how CSS media queries work"
+    should_trigger: false
+  - id: "near-miss-2"
+    prompt: "Review this responsive design proposal without running the site"
+    should_trigger: false
+  - id: "near-miss-3"
+    prompt: "Write unit tests for this backend parser"
+    should_trigger: false
+  - id: "near-miss-4"
+    prompt: "Create a visual concept for a new landing page"
+    should_trigger: false
+rubric:
+  outcome: "produce browser-backed release evidence and fix responsive blockers instead of treating a passing build as proof"
+  verification: "Load the actual local or staged page; verify identity, meaningful DOM, console health, a primary interaction, desktop and 390px screenshots, and scrollWidth equal to innerWidth."
+  done:
+    - "The actual local, staged, or released page has the expected URL, title, and meaningful rendered content"
+    - "No relevant console warning, framework overlay, missing asset, clipping, overlap, or horizontal viewport overflow remains"
+    - "At least one primary interaction has a directly observed state change"
+    - "Desktop and 390px mobile evidence correspond to the implementation being released"
+    - "The handoff names exact viewports, evidence, fixed blockers, and any untested browser or state"

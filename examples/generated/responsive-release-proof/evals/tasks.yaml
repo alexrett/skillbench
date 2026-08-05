@@ -1,0 +1,64 @@
+version: 1
+skill: responsive-release-proof
+thresholds:
+  min_skill_score: 0.9
+  min_delta: 0.2
+cases:
+  - id: mobile-release-proof
+    prompt: >-
+      Prepare this static landing page for release. Previous build checks passed.
+      Perform the final responsive QA, fix any blocker you can prove in this
+      environment, and leave concise machine-readable evidence for the
+      maintainer. Do not claim a browser check that the environment cannot run.
+    fixture: fixtures/mobile-release-proof
+    rubric:
+      - id: comparison-can-shrink
+        description: The mobile comparison surface no longer forces a wide minimum
+        type: file-contains
+        path: styles.css
+        value: "min-width: 0"
+        weight: 1
+      - id: ci-command-can-wrap
+        description: The long CI reference has an explicit emergency wrap rule
+        type: file-contains
+        path: styles.css
+        value: "overflow-wrap: anywhere"
+        weight: 1
+      - id: proxy-ran
+        description: The project responsive proxy was executed after the fix
+        type: command-exit-code
+        value: "bun run qa"
+        expected: 0
+        weight: 1
+      - id: evidence-created
+        description: The stable responsive evidence artifact was created
+        type: file-exists
+        path: .skillbench/responsive-evidence.json
+        weight: 1
+      - id: evidence-version
+        description: The evidence schema is versioned
+        type: json-equals
+        path: .skillbench/responsive-evidence.json
+        property: schemaVersion
+        expected: 1
+        weight: 1
+      - id: honest-ready-state
+        description: Static-only evaluation is not mislabeled browser-ready
+        type: json-equals
+        path: .skillbench/responsive-evidence.json
+        property: ready
+        expected: false
+        weight: 2
+      - id: mobile-width-recorded
+        description: The mobile target is recorded explicitly
+        type: file-contains
+        path: .skillbench/responsive-evidence.json
+        value: '"width": 390'
+        weight: 1
+      - id: browser-gap-recorded
+        description: The unavailable real browser path remains visible
+        type: file-contains
+        path: .skillbench/responsive-evidence.json
+        value: "Real browser verification was not available"
+        case_sensitive: false
+        weight: 2
