@@ -14,6 +14,8 @@ const requiredSnippets = [
   'property="og:title"',
   'name="twitter:card"',
   "Turn repeated agent failures into tested skills.",
+  "A real project, not a demo fixture.",
+  "malikov.tech",
   "npm i -g skillbench-cli",
 ];
 
