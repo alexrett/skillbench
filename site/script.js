@@ -180,7 +180,7 @@ const commandModes = {
   headless: [
     "skillbench build ./brief.json --out ./.agents/skills/release-check",
     "skillbench check ./.agents/skills/release-check --strict --fail-on high --json",
-    "skillbench eval ./.agents/skills/release-check --json",
+    "skillbench eval ./.agents/skills/release-check --runner claude --json",
     "skillbench challenge ./.agents/skills/release-check --runs 3 --report evidence.json --json",
     "skillbench registry add ./.agents/skills/release-check --version 0.1.0 --json",
   ],

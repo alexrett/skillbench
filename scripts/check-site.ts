@@ -19,6 +19,7 @@ const requiredSnippets = [
   "Our own example failed the usefulness challenge.",
   "Then the mobile bug became a skill.",
   "skillbench check --strict --fail-on high",
+  "--runner claude",
   "malikov.tech",
   "npm i -g skillbench-cli",
 ];

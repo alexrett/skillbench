@@ -31,8 +31,8 @@
     />
     <meta name="twitter:image" content="https://alexrett.github.io/skillbench/assets/og-skillbench.png" />
 
-    <link rel="stylesheet" href="styles.css?v=0.4.0" />
-    <script src="script.js?v=0.4.0" defer></script>
+    <link rel="stylesheet" href="styles.css?v=0.5.0" />
+    <script src="script.js?v=0.5.0" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -90,7 +90,7 @@
           <div class="workbench-shell" aria-label="Interactive Skillbench workbench preview">
             <div class="terminal-bar">
               <strong>skillbench / workbench</strong>
-              <span>v0.4.0 / evidence first</span>
+              <span>v0.5.0 / codex + claude</span>
             </div>
 
             <div class="terminal-menu" role="listbox" aria-label="Workbench actions">
@@ -188,7 +188,7 @@
               <span>✓ final mentions live evidence</span><b>PASS</b>
             </div>
           </div>
-          <p class="evidence-note"><span aria-hidden="true">i</span>The runtime package is copied faithfully; <code>evals/</code>, the rubric, and the other run stay hidden. Order is counterbalanced AB/BA.</p>
+          <p class="evidence-note"><span aria-hidden="true">i</span>The runtime package is copied faithfully; <code>evals/</code>, the rubric, and the other run stay hidden. Use Codex by default or run the same suite with <code>--runner claude</code>.</p>
         </div>
       </section>
 
@@ -326,8 +326,8 @@
                 <code>skillbench check ./.agents/skills/release-check --strict --fail-on high</code>
               </li>
               <li tabindex="0">
-                <div><span>03</span><strong>Test discovery</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench eval ./.agents/skills/release-check" aria-label="Copy discovery test command"><span class="copy-label">Copy</span></button></div>
-                <code>skillbench eval ./.agents/skills/release-check</code>
+                <div><span>03</span><strong>Test discovery</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench eval ./.agents/skills/release-check --runner claude" aria-label="Copy discovery test command"><span class="copy-label">Copy</span></button></div>
+                <code>skillbench eval ./.agents/skills/release-check --runner claude</code>
               </li>
               <li tabindex="0">
                 <div><span>04</span><strong>Challenge usefulness</strong><button type="button" class="mini-copy copy-command" data-copy="skillbench challenge ./.agents/skills/release-check --runs 3 --report evidence.json" aria-label="Copy skill challenge command"><span class="copy-label">Copy</span></button></div>
@@ -355,7 +355,7 @@
           </div>
 
           <a class="ci-rail" href="https://github.com/alexrett/skillbench#repository-gate">
-            <span>Reusable GitHub Action:</span> <code>alexrett/skillbench@v0.4.0</code><i aria-hidden="true">›</i>
+            <span>Reusable GitHub Action:</span> <code>alexrett/skillbench@v0.5.0</code><i aria-hidden="true">›</i>
           </a>
         </div>
       </section>
@@ -391,8 +391,8 @@
 
           <div class="boundary-grid">
             <article>
-              <h3>Built to work together.</h3>
-              <p>Create and prove with Skillbench. Publish standard Agent Skills. Install them anywhere with the ecosystem tools your team already uses.</p>
+              <h3>One suite, two runners.</h3>
+              <p>Evaluate through Codex or Claude Code. Static gates need neither; <code>--agent claude</code> installs directly into Claude's conventional skill directory.</p>
             </article>
             <article>
               <h3>A deliberately small boundary.</h3>
@@ -431,7 +431,7 @@
           <a href="https://www.npmjs.com/package/skillbench-cli">npm</a>
           <a href="https://github.com/alexrett/skillbench/blob/main/LICENSE">MIT License</a>
         </nav>
-        <span>v0.4.0 / open source</span>
+        <span>v0.5.0 / open source</span>
       </div>
     </footer>
   </body>

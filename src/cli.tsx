@@ -5,7 +5,6 @@ import os from "node:os";
 import path from "node:path";
 import { render } from "@semos-labs/glyph";
 import { checkSkills } from "./check.ts";
-import { CodexTriggerRunner } from "./eval/codex-runner.ts";
 import { loadTriggerEvalSuite } from "./eval/load.ts";
 import { runTriggerEvals } from "./eval/run.ts";
 import type { TriggerEvalReport } from "./eval/types.ts";
@@ -24,9 +23,9 @@ import {
   searchRegistry,
 } from "./registry/registry.ts";
 import { readLock } from "./registry/lock.ts";
+import { createTaskRunner, createTriggerRunner, parseAgentRunner, type AgentRunnerName } from "./runners.ts";
 import { auditSkillDirectory } from "./security/audit.ts";
 import type { SecuritySeverity, SkillSecurityReport } from "./security/types.ts";
-import { CodexTaskRunner } from "./task-eval/codex-runner.ts";
 import { loadTaskEvalSuite } from "./task-eval/load.ts";
 import { runTaskEvals } from "./task-eval/run.ts";
 import type { TaskEvalReport } from "./task-eval/types.ts";
@@ -46,26 +45,27 @@ Usage:
   skillbench lint <skill-directory> [--json] [--report <file>]
   skillbench audit <skill-directory> [--fail-on high] [--json] [--report <file>]
   skillbench check [paths...] [--strict] [--fail-on high] [--json] [--report <file>]
-  skillbench eval <skill-directory> [--task] [--model <model>] [--plain|--json] [--report <file>]
-  skillbench challenge <skill-directory> [--runs 3] [--seed 1] [--model <model>] [--report <file>]
+  skillbench eval <skill-directory> [--task] [--runner codex|claude] [--model <model>] [--plain|--json]
+  skillbench challenge <skill-directory> [--runner codex|claude] [--runs 3] [--seed 1] [--report <file>]
   skillbench eval <skill-directory> --prompt <request> --expect trigger|skip
   skillbench registry init [directory] [--name <name>]
   skillbench registry add <skill-directory> --registry <directory> --version <version>
   skillbench registry list|search|show|doctor [query] [--registry <path-or-git-url>]
-  skillbench install <skill[@version]> [--registry <path-or-git-url>] [--to <directory>|--global]
-  skillbench remove <skill> [--to <directory>|--global]
-  skillbench installed [--check] [--to <directory>|--global] [--json]
+  skillbench install <skill[@version]> [--registry <path-or-git-url>] [--agent codex|claude] [--to <directory>|--global]
+  skillbench remove <skill> [--agent codex|claude] [--to <directory>|--global]
+  skillbench installed [--check] [--agent codex|claude] [--to <directory>|--global] [--json]
   skillbench --version
   skillbench help
 
-The generated package contains SKILL.md, Codex UI metadata, and trigger eval cases.`;
+Evaluation defaults to Codex. Use --runner claude or SKILLBENCH_RUNNER=claude for Claude Code.
+The generated package contains portable SKILL.md instructions, optional Codex UI metadata, and eval cases.`;
 
 function option(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);
   return index >= 0 ? args[index + 1] : undefined;
 }
 
-const VALUE_OPTIONS = new Set(["--out", "--model", "--codex-bin", "--concurrency", "--limit", "--timeout", "--registry", "--version", "--to", "--name", "--prompt", "--expect", "--runs", "--seed", "--order", "--fail-on", "--report"]);
+const VALUE_OPTIONS = new Set(["--out", "--model", "--runner", "--codex-bin", "--claude-bin", "--agent", "--concurrency", "--limit", "--timeout", "--registry", "--version", "--to", "--name", "--prompt", "--expect", "--runs", "--seed", "--order", "--fail-on", "--report"]);
 
 function positional(args: string[]): string[] {
   const values: string[] = [];
@@ -108,6 +108,14 @@ function orderOption(args: string[]): "fixed" | "counterbalanced" {
     throw new Error("--order must be fixed or counterbalanced");
   }
   return value;
+}
+
+function runnerOption(args: string[]): AgentRunnerName {
+  return parseAgentRunner(option(args, "--runner") ?? process.env.SKILLBENCH_RUNNER);
+}
+
+function runnerBinary(args: string[], runner: AgentRunnerName): string | undefined {
+  return option(args, runner === "claude" ? "--claude-bin" : "--codex-bin");
 }
 
 async function writeJsonReport(args: string[], value: unknown): Promise<void> {
@@ -159,6 +167,20 @@ function printSecurityReport(report: SkillSecurityReport): void {
 function installRoot(args: string[]): string {
   const explicit = option(args, "--to");
   if (explicit) return path.resolve(explicit);
+  const agent = option(args, "--agent");
+  if (agent !== undefined && agent !== "codex" && agent !== "claude") {
+    throw new Error("--agent must be codex or claude");
+  }
+  if (agent === "claude") {
+    return args.includes("--global")
+      ? path.join(os.homedir(), ".claude", "skills")
+      : path.resolve(".claude", "skills");
+  }
+  if (agent === "codex") {
+    return args.includes("--global")
+      ? path.join(os.homedir(), ".codex", "skills")
+      : path.resolve(".codex", "skills");
+  }
   if (args.includes("--global")) return path.join(os.homedir(), ".codex", "skills");
   return path.resolve(".agents", "skills");
 }
@@ -270,8 +292,9 @@ async function main(): Promise<void> {
   if (command === "challenge") {
     const [target = "."] = positional(args);
     const suite = await loadTaskEvalSuite(target);
-    const runner = new CodexTaskRunner({
-      binary: option(args, "--codex-bin"),
+    const runnerName = runnerOption(args);
+    const runner = createTaskRunner(runnerName, {
+      binary: runnerBinary(args, runnerName),
       model: option(args, "--model"),
       timeoutMs: numberOption(args, "--timeout", 180_000),
     });
@@ -299,8 +322,9 @@ async function main(): Promise<void> {
       const suite = await loadTaskEvalSuite(target);
       const limitValue = option(args, "--limit");
       const limit = limitValue ? numberOption(args, "--limit", suite.cases.length) : undefined;
-      const runner = new CodexTaskRunner({
-        binary: option(args, "--codex-bin"),
+      const runnerName = runnerOption(args);
+      const runner = createTaskRunner(runnerName, {
+        binary: runnerBinary(args, runnerName),
         model: option(args, "--model"),
         timeoutMs: numberOption(args, "--timeout", 180_000),
       });
@@ -332,8 +356,9 @@ async function main(): Promise<void> {
     }
     const limitValue = option(args, "--limit");
     const limit = limitValue ? numberOption(args, "--limit", suite.cases.length) : undefined;
-    const runner = new CodexTriggerRunner({
-      binary: option(args, "--codex-bin"),
+    const runnerName = runnerOption(args);
+    const runner = createTriggerRunner(runnerName, {
+      binary: runnerBinary(args, runnerName),
       model: option(args, "--model"),
       timeoutMs: numberOption(args, "--timeout", 120_000),
     });
@@ -402,7 +427,7 @@ async function main(): Promise<void> {
 
   if (command === "install") {
     const [selector] = positional(args);
-    if (!selector) throw new Error("Usage: skillbench install <skill[@version]> [--registry <path-or-git-url>] [--to <directory>|--global]");
+    if (!selector) throw new Error("Usage: skillbench install <skill[@version]> [--registry <path-or-git-url>] [--agent codex|claude] [--to <directory>|--global]");
     const result = await installSkill({
       registry: option(args, "--registry") ?? "./registry",
       selector,
@@ -417,7 +442,7 @@ async function main(): Promise<void> {
 
   if (command === "remove") {
     const [name] = positional(args);
-    if (!name) throw new Error("Usage: skillbench remove <skill> [--to <directory>|--global]");
+    if (!name) throw new Error("Usage: skillbench remove <skill> [--agent codex|claude] [--to <directory>|--global]");
     const removed = await removeInstalledSkill(name, installRoot(args));
     console.log(`Removed ${removed}`);
     return;

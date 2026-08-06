@@ -63,10 +63,7 @@ async function validateOpenaiYaml(
   issues: ValidationIssue[],
 ): Promise<void> {
   const filePath = path.join(root, "agents", "openai.yaml");
-  if (!(await fileExists(filePath))) {
-    issues.push(issue("warning", "missing-openai-metadata", "agents/openai.yaml is missing"));
-    return;
-  }
+  if (!(await fileExists(filePath))) return;
 
   try {
     const value = YAML.parse(await readFile(filePath, "utf8"));

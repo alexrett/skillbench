@@ -15,9 +15,11 @@ import {
   EMPTY_DRAFT,
   joinLines,
   normalizeSkillName,
+  outputPathForTarget,
   splitLines,
   titleFromName,
   type SkillDraft,
+  type SkillAgentTarget,
   type SourceKind,
 } from "../model.ts";
 import { validateSkillDirectory, type ValidationIssue } from "../validate.ts";
@@ -206,15 +208,31 @@ function ProcessStep({ draft, update, back, next }: StepProps) {
 
 function ReviewStep({ draft, update, back, onBuild, building }: StepProps & { onBuild: () => void; building: boolean }) {
   const [confirmed, setConfirmed] = useState(false);
+  const targets: Array<{ label: string; value: SkillAgentTarget }> = [
+    { label: "Portable", value: "portable" },
+    { label: "Claude", value: "claude" },
+    { label: "Codex", value: "codex" },
+  ];
   return (
     <Box style={{ gap: 1 }}>
       <Text style={{ bold: true }}>Build the portable package</Text>
+      <Box style={{ flexDirection: "row", gap: 1, alignItems: "center" }}>
+        <Text style={{ bold: true }}>Target</Text>
+        {targets.map((target) => {
+          const targetPath = outputPathForTarget(draft.name, target.value);
+          return (
+            <ActionButton key={target.value} onPress={() => update({ outputPath: targetPath })} primary={draft.outputPath === targetPath}>
+              {target.label}
+            </ActionButton>
+          );
+        })}
+      </Box>
       <Field label="Output directory" value={draft.outputPath} onChange={(outputPath) => update({ outputPath })} autoFocus />
       <Box style={{ bg: COLORS.panel, padding: 1, gap: 0 }}>
         <Text><Text style={{ color: COLORS.muted }}>skill </Text>{draft.name}</Text>
         <Text><Text style={{ color: COLORS.muted }}>triggers </Text>{draft.positiveTriggers.length} positive / {draft.negativeTriggers.length} near-miss</Text>
         <Text><Text style={{ color: COLORS.muted }}>process </Text>{draft.processSteps.length} steps / {draft.doneCriteria.length} done checks</Text>
-        <Text><Text style={{ color: COLORS.muted }}>files </Text>SKILL.md · agents/openai.yaml · evals/cases.yaml</Text>
+        <Text><Text style={{ color: COLORS.muted }}>files </Text>SKILL.md · optional Codex metadata · evals/cases.yaml</Text>
       </Box>
       <Checkbox
         checked={confirmed}

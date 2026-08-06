@@ -22,7 +22,7 @@ export const TEST_DRAFT: SkillDraft = {
 };
 
 describe("generatePackage", () => {
-  test("creates a portable skill with Codex metadata and eval cases", () => {
+  test("creates a portable skill with optional Codex metadata and eval cases", () => {
     const generated = generatePackage(TEST_DRAFT);
     expect(generated.skillMarkdown).toContain("name: verify-real-outcome");
     expect(generated.skillMarkdown).toContain("## Done");

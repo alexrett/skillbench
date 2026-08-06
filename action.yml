@@ -22,7 +22,7 @@ inputs:
   version:
     description: Immutable skillbench-cli package version to execute.
     required: false
-    default: 0.4.0
+    default: 0.5.0
   report:
     description: JSON evidence report path.
     required: false

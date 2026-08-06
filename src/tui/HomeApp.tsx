@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import { Box, Checkbox, Keybind, Menu, ScrollView, Text, useApp, useMediaQuery } from "@semos-labs/glyph";
 import { checkSkills, type CheckSkillsReport } from "../check.ts";
-import { CodexTriggerRunner } from "../eval/codex-runner.ts";
 import { loadTriggerEvalSuite } from "../eval/load.ts";
-import type { TriggerEvalSuite } from "../eval/types.ts";
+import type { TriggerEvalSuite, TriggerRunner } from "../eval/types.ts";
 import { inspectRegistrySkill, installSkill, openRegistry, searchRegistry } from "../registry/registry.ts";
 import type { OpenedRegistry, RegistrySkillVersion } from "../registry/types.ts";
+import { createTaskRunner, createTriggerRunner, type AgentRunnerName } from "../runners.ts";
 import { auditSkillDirectory } from "../security/audit.ts";
 import type { SecuritySeverity, SkillSecurityReport } from "../security/types.ts";
-import { CodexTaskRunner } from "../task-eval/codex-runner.ts";
 import { loadTaskEvalSuite } from "../task-eval/load.ts";
-import type { TaskEvalSuite } from "../task-eval/types.ts";
+import type { TaskEvalSuite, TaskRunner } from "../task-eval/types.ts";
 import { validateSkillDirectory, type ValidationResult } from "../validate.ts";
 import { App } from "./App.tsx";
 import { ActionButton, COLORS, Field } from "./components.tsx";
@@ -37,10 +36,11 @@ function SetupPanel({
 }: {
   kind: "trigger" | "task";
   onBack: () => void;
-  onTrigger: (suite: TriggerEvalSuite, runner: CodexTriggerRunner) => void;
-  onTask: (suite: TaskEvalSuite, runner: CodexTaskRunner, config: TaskRunConfig) => void;
+  onTrigger: (suite: TriggerEvalSuite, runner: TriggerRunner) => void;
+  onTask: (suite: TaskEvalSuite, runner: TaskRunner, config: TaskRunConfig) => void;
 }) {
   const [target, setTarget] = useState(".");
+  const [runnerName, setRunnerName] = useState<AgentRunnerName>("codex");
   const [model, setModel] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,7 +54,7 @@ function SetupPanel({
     setError("");
     try {
       if (kind === "trigger") {
-        onTrigger(await loadTriggerEvalSuite(target), new CodexTriggerRunner({ model: model || undefined }));
+        onTrigger(await loadTriggerEvalSuite(target), createTriggerRunner(runnerName, { model: model || undefined }));
       } else {
         const parsedRuns = Number.parseInt(runs, 10);
         const parsedSeed = Number.parseInt(seed, 10);
@@ -62,7 +62,7 @@ function SetupPanel({
         if (!Number.isInteger(parsedSeed)) throw new Error("Seed must be an integer");
         onTask(
           await loadTaskEvalSuite(target),
-          new CodexTaskRunner({ model: model || undefined }),
+          createTaskRunner(runnerName, { model: model || undefined }),
           { runs: parsedRuns, order: counterbalanced ? "counterbalanced" : "fixed", seed: parsedSeed },
         );
       }
@@ -75,9 +75,14 @@ function SetupPanel({
   return (
     <Box style={{ width: "100%", height: "100%", justifyContent: "center", alignItems: "center", padding: 2 }}>
       <Box style={{ width: 76, border: "round", borderColor: COLORS.accent, padding: 2, gap: 1 }}>
-        <Header title={kind === "trigger" ? "Trigger evaluation" : "Task A/B evaluation"} subtitle={kind === "trigger" ? "Measure discovery precision and recall" : "Compare baseline and skill in isolated workspaces"} />
+        <Header title={kind === "trigger" ? "Trigger evaluation" : "Task A/B evaluation"} subtitle={kind === "trigger" ? "Measure discovery precision and recall" : "Compare baseline and skill in disposable workspaces"} />
         <Field label="Skill directory" value={target} onChange={setTarget} autoFocus />
-        <Field label="Model" hint="optional" value={model} onChange={setModel} placeholder="Codex default" />
+        <Box style={{ flexDirection: "row", gap: 1, alignItems: "center" }}>
+          <Text style={{ bold: true }}>Runner</Text>
+          <ActionButton onPress={() => setRunnerName("codex")} primary={runnerName === "codex"}>Codex</ActionButton>
+          <ActionButton onPress={() => setRunnerName("claude")} primary={runnerName === "claude"}>Claude</ActionButton>
+        </Box>
+        <Field label="Model" hint="optional" value={model} onChange={setModel} placeholder={`${runnerName} default`} />
         {kind === "task" ? (
           <>
             <Box style={{ flexDirection: "row", gap: 1 }}>
@@ -317,6 +322,12 @@ function RegistryPanel({ onBack }: { onBack: () => void }) {
         <Box style={{ flexGrow: 1 }}><Field label="Registry" value={source} onChange={setSource} autoFocus /></Box>
         <Box style={{ width: 32 }}><Field label="Search" value={query} onChange={search} placeholder="name or description" /></Box>
       </Box>
+      <Box style={{ flexDirection: "row", gap: 1, alignItems: "center" }}>
+        <Text style={{ bold: true }}>Install target</Text>
+        <ActionButton onPress={() => setTargetRoot("./.agents/skills")} primary={targetRoot === "./.agents/skills"}>Portable</ActionButton>
+        <ActionButton onPress={() => setTargetRoot("./.claude/skills")} primary={targetRoot === "./.claude/skills"}>Claude</ActionButton>
+        <ActionButton onPress={() => setTargetRoot("./.codex/skills")} primary={targetRoot === "./.codex/skills"}>Codex</ActionButton>
+      </Box>
       <Field label="Install to" value={targetRoot} onChange={setTargetRoot} />
       <Checkbox checked={replaceExisting} onChange={setReplaceExisting} label="Replace an existing installed copy" focusedStyle={{ color: COLORS.accent }} />
       <ScrollView style={{ flexGrow: 1, minHeight: 0, bg: COLORS.panel, padding: 1 }}>
@@ -381,8 +392,8 @@ function Home({ onSelect }: { onSelect: (screen: Screen) => void }) {
 export function HomeApp() {
   const { exit } = useApp();
   const [screen, setScreen] = useState<Screen>("home");
-  const [activeTrigger, setActiveTrigger] = useState<{ suite: TriggerEvalSuite; runner: CodexTriggerRunner } | null>(null);
-  const [activeTask, setActiveTask] = useState<{ suite: TaskEvalSuite; runner: CodexTaskRunner; config: TaskRunConfig } | null>(null);
+  const [activeTrigger, setActiveTrigger] = useState<{ suite: TriggerEvalSuite; runner: TriggerRunner } | null>(null);
+  const [activeTask, setActiveTask] = useState<{ suite: TaskEvalSuite; runner: TaskRunner; config: TaskRunConfig } | null>(null);
 
   if (activeTrigger) return <EvalApp suite={activeTrigger.suite} runner={activeTrigger.runner} concurrency={2} />;
   if (activeTask) return <TaskEvalApp suite={activeTask.suite} runner={activeTask.runner} concurrency={1} {...activeTask.config} />;

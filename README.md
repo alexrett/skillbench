@@ -8,6 +8,8 @@ Turn repeated agent failures into portable, tested Agent Skills.
 
 Skillbench is a local-first CLI and [Glyph](https://github.com/semos-labs/glyph) TUI for constructing `SKILL.md` packages, validating their portable shape, auditing suspicious instructions, testing discovery boundaries, challenging actual agent behavior against a baseline, and shipping immutable versions with checksums and lockfile provenance.
 
+The deterministic authoring, audit, registry, and CI commands need no model account. Behavioral evals can run through either Codex or Claude Code.
+
 **[Website](https://alexrett.github.io/skillbench/)** · **[npm](https://www.npmjs.com/package/skillbench-cli)** · **[Releases](https://github.com/alexrett/skillbench/releases)**
 
 ## Install
@@ -76,6 +78,9 @@ skillbench audit ./.agents/skills/release-check
 # Test when the skill should and should not be discovered
 skillbench eval ./.agents/skills/release-check
 
+# Run the same suite through Claude Code
+skillbench eval ./.agents/skills/release-check --runner claude
+
 # Challenge the skill with repeated counterbalanced baseline/skill runs
 skillbench challenge ./.agents/skills/release-check \
   --runs 3 --seed 17 --report .skillbench/evidence.json
@@ -85,6 +90,30 @@ skillbench check --strict --fail-on high
 ```
 
 Interactive terminals receive live Glyph dashboards. `--plain` and `--json` provide stable headless output where supported.
+
+## Codex and Claude Code
+
+Behavioral evals default to Codex for backward compatibility. Choose Claude from the TUI or in headless commands:
+
+```bash
+skillbench eval ./release-check --runner claude
+skillbench challenge ./release-check --runner claude --model sonnet --runs 3
+
+# Convenient for CI or a Claude-first machine
+SKILLBENCH_RUNNER=claude skillbench eval ./release-check --plain
+```
+
+Skillbench invokes the installed `claude` binary in non-interactive mode. Use `--claude-bin <path>` for a non-standard install. Claude Code must be authenticated and have usable API or Agent SDK allowance; an expired OAuth session produces an actionable runner error. None of `new`, `build`, `validate`, `lint`, `audit`, `check`, or the registry commands requires a Claude or Codex license.
+
+Trigger evals run Claude in safe mode, in an empty temporary directory, with all tools disabled. Task challenges run in Skillbench's disposable fixture workspaces, disable user customizations and Claude's WebFetch/WebSearch tools, and collect Bash command traces from stream JSON. Claude Code does not expose a network sandbox equivalent to the Codex task runner: Bash commands can still reach the network. Audit untrusted skills first and use an external sandbox for hostile inputs.
+
+Registry installs can target either agent's conventional directory:
+
+```bash
+skillbench install release-check@0.1.0 --registry ./registry --agent claude
+skillbench install release-check@0.1.0 --registry ./registry --agent claude --global
+# project: ./.claude/skills · global: ~/.claude/skills
+```
 
 ## Generated package
 
@@ -102,7 +131,7 @@ release-check/
     └── fixtures/                # optional isolated workspaces
 ```
 
-The `evals/` directory is a Skillbench extension. It does not change the portable skill semantics, and existing installers copy it as ordinary package content.
+The `evals/` directory is a Skillbench extension. It does not change the portable skill semantics, and existing installers copy it as ordinary package content. `agents/openai.yaml` adds optional Codex UI metadata; Claude and other agents use the portable `SKILL.md` package and safely ignore that file.
 
 ## What gets measured
 
@@ -162,7 +191,7 @@ cases:
         weight: 1
 ```
 
-Task runs use ephemeral `workspace-write` sandboxes. Trigger evaluators use empty, read-only workspaces. `--keep` preserves task workspaces for debugging; otherwise they are removed after scoring.
+Task runs use fresh disposable workspaces. Codex adds a `workspace-write` sandbox with network access disabled. Claude runs with customizations and native web tools disabled, but its Bash tool is not network-sandboxed. Trigger evaluators use empty workspaces and no tools. `--keep` preserves task workspaces for debugging; otherwise they are removed after scoring.
 
 `skillbench challenge` defaults to three paired runs and counterbalances execution order (`AB/BA`) with a reproducible seed. Reports include score delta and variance, latency, token usage when the runner exposes it, command traces, and one deliberately opinionated verdict:
 
@@ -190,11 +219,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: alexrett/skillbench@v0.4.0
+      - uses: alexrett/skillbench@v0.5.0
         with:
           strict: "true"
           fail-on: high
-          version: 0.4.0
+          version: 0.5.0
           report: skillbench-report.json
 ```
 
@@ -249,7 +278,7 @@ Skillbench is an authoring-and-evidence workbench, not a replacement for the eco
 | [`skill-eval`](https://github.com/effectorHQ/skill-eval) | Static structural quality analysis | Skillbench also audits threats and runs repeated, isolated baseline-versus-skill tasks |
 | [`mattpocock/skills`](https://github.com/mattpocock/skills) | A real, composable collection of production engineering skills | It is a skill collection and inspiration; Skillbench is tooling for building and testing your own |
 
-Skillbench intentionally does **not** provide hosted accounts, ratings, a marketplace, or multi-agent installation. Create and prove with Skillbench, then publish standard Agent Skills and install them with the ecosystem tool your team already uses.
+Skillbench intentionally does **not** provide hosted accounts, ratings, or a marketplace. Its built-in registry targets Codex and Claude Code; broader ecosystem discovery and installation remain the job of tools such as `npx skills`.
 
 ## Honest dogfood
 
@@ -263,7 +292,7 @@ These are small local samples, not universal benchmark claims. Keep the fixtures
 
 ## Security boundary
 
-Run `skillbench audit` before any task evaluation. Task evaluation executes agent instructions and local commands, so a static pass is not permission to trust a hostile package. Skillbench disables workspace network access for Codex task runs, but a workspace sandbox is a safety layer rather than proof that arbitrary third-party instructions are harmless. See [SECURITY.md](SECURITY.md) for reporting and threat-model limitations.
+Run `skillbench audit` before any task evaluation. Task evaluation executes agent instructions and local commands, so a static pass is not permission to trust a hostile package. Skillbench disables workspace network access for Codex task runs. Claude task runs disable native web tools, but Bash is not network-sandboxed. Either workspace boundary is a safety layer rather than proof that arbitrary third-party instructions are harmless. See [SECURITY.md](SECURITY.md) for reporting and threat-model limitations.
 
 ## Development
 

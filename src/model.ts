@@ -1,4 +1,5 @@
 export type SourceKind = "failure" | "success" | "process";
+export type SkillAgentTarget = "portable" | "claude" | "codex";
 
 export interface SkillDraft {
   name: string;
@@ -53,7 +54,12 @@ export function joinLines(value: string[]): string {
 }
 
 export function defaultOutputPath(name: string): string {
-  return `./.agents/skills/${normalizeSkillName(name) || "new-skill"}`;
+  return outputPathForTarget(name, "portable");
+}
+
+export function outputPathForTarget(name: string, target: SkillAgentTarget): string {
+  const root = target === "claude" ? ".claude" : target === "codex" ? ".codex" : ".agents";
+  return `./${root}/skills/${normalizeSkillName(name) || "new-skill"}`;
 }
 
 export function titleFromName(name: string): string {

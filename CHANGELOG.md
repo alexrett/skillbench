@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 — 2026-08-06
+
+- Add Claude Code as a first-class trigger-eval and task-challenge runner through `--runner claude` and the Glyph TUI.
+- Parse Claude structured output, token usage, final responses, and Bash command traces without leaking labels or rubrics.
+- Run Claude trigger evals with no tools and task evals with user customizations and native web tools disabled.
+- Add actionable missing-binary, authentication, malformed-output, and timeout errors for Claude runs.
+- Install registry skills into project or global Claude directories with `--agent claude`.
+- Keep all deterministic construction, validation, lint, audit, registry, and CI workflows model- and license-independent.
+- Document the weaker Claude task-network boundary and the expired-license live-test limitation honestly.
+
 ## 0.4.0 — 2026-08-05
 
 - Add static skill-package vulnerability auditing with severity gates, narrow suppressions, package-escape detection, and registry enforcement.

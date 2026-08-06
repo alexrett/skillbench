@@ -31,6 +31,7 @@ describe("validateSkillDirectory", () => {
       const lint = await lintSkillDirectory(target);
 
       expect(validation.valid).toBe(true);
+      expect(validation.issues.map((entry) => entry.code)).not.toContain("missing-openai-metadata");
       expect(validation.issues.map((entry) => entry.code)).not.toContain("missing-done");
       expect(lint.valid).toBe(false);
       expect(lint.issues.map((entry) => entry.code)).toContain("missing-done");

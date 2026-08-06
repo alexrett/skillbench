@@ -8,7 +8,7 @@ Security fixes are applied to the latest published version of Skillbench.
 
 Please use [GitHub private vulnerability reporting](https://github.com/alexrett/skillbench/security/advisories/new). Do not open a public issue for a suspected vulnerability.
 
-Skills and task fixtures can contain executable agent instructions. Inspect untrusted packages before evaluation and use a disposable environment. Skillbench disables network access in Codex task workspaces, but a workspace sandbox is a safety layer rather than permission to execute hostile content.
+Skills and task fixtures can contain executable agent instructions. Inspect untrusted packages before evaluation and use a disposable environment. Skillbench disables network access in Codex task workspaces. Claude task runs disable native WebFetch and WebSearch tools, but Claude Code does not expose an equivalent network sandbox and Bash can still reach the network. Neither boundary is permission to execute hostile content.
 
 ## Skill package audit
 
